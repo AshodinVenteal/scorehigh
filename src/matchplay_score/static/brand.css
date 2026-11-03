@@ -61,3 +61,15 @@
 .donation-link:focus-visible{outline:3px solid #fff;outline-offset:4px}
 .masthead-inner>.display-settings{margin-left:0}
 @media(max-width:700px){.masthead-inner{flex-wrap:wrap}.masthead-inner>.display-settings{margin-left:auto}.donation-link{order:3;flex-basis:100%;margin-left:0;font-size:14px;min-height:46px}}
+.ranking-entry,.player-tracking{position:relative}
+.ranking-entry .player-controls{position:absolute;top:7px;right:7px;gap:0;padding:0;flex-wrap:nowrap}
+.player-icon-button{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:10px;border:1px solid transparent;background:transparent;color:var(--link);cursor:pointer}
+.player-icon-button svg{display:block;width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+.player-icon-button:hover{background:var(--panel);border-color:var(--line)}
+.player-icon-button[aria-pressed=true] svg{fill:currentColor}
+.player-icon-button[data-claim-player][aria-pressed=true]{color:var(--ink);background:var(--panel);border-color:var(--strong-line)}
+.ranking-entry .ranking-row{grid-template-columns:30px minmax(0,1fr)}
+.ranking-entry .player-info{padding-right:94px;min-height:45px}
+.ranking-entry .score-info{grid-column:2;text-align:left;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.player-tracking .player-controls{justify-content:flex-end;padding:4px 7px}
+@media(max-width:600px){.ranking-entry .ranking-row{grid-template-columns:25px minmax(0,1fr)}.ranking-entry .player-info{padding-right:88px}.ranking-entry .player-controls{right:3px}.ranking-entry .score-info{gap:10px}}

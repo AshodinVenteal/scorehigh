@@ -52,6 +52,8 @@ def main():
         page.reload(wait_until='networkidle')
         page.locator('[data-claim-player]').first.click()
         assert page.locator('.ranking-entry.is-me').count() == 1
+        assert page.locator('[data-claim-player]:visible').count() == 1
+        assert page.locator('[data-claim-player]:visible svg').count() == 1
         page.locator('[data-follow-player]').nth(1).click()
         assert page.locator('.ranking-entry.is-followed').count() == 1
         page.locator('[data-following-filter]').click()
@@ -60,9 +62,12 @@ def main():
         page.reload(wait_until='networkidle')
         assert page.locator('.ranking-entry.is-me').count() == 1
         assert page.locator('.ranking-entry.is-followed').count() == 1
+        page.locator('.ranking-entry.is-me [data-claim-player]').click()
+        assert page.locator('[data-claim-player]:visible').count() == entries.count()
         page.locator('[data-claim-player]').nth(2).click()
         assert page.locator('.ranking-entry.is-me').count() == 1
         assert page.locator('.ranking-entry.is-me').get_attribute('data-player') == entries.nth(2).get_attribute('data-player')
+        page.locator('.ranking-entry.is-me [data-claim-player]').click()
         page.locator('[data-claim-player]').first.click()
         assert page.locator('.ranking-entry.is-me').get_attribute('data-player') == name
         assert 'Snapshot:' in page.locator('[data-refresh-status]').inner_text()

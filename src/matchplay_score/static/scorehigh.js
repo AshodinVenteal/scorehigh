@@ -89,11 +89,12 @@
       badge.textContent = mine ? 'YOU' : 'FOLLOWING';
       badge.hidden = !mine && !followed;
       const claim = one('[data-claim-player]', entry);
-      claim.textContent = mine ? 'Unclaim player' : 'Claim player';
+      claim.hidden = Boolean(state.claimed) && !mine;
+      claim.title = mine ? 'Unclaim yourself' : 'Claim as yourself';
       claim.setAttribute('aria-pressed', String(mine));
       claim.setAttribute('aria-label', `${mine ? 'Unclaim' : 'Claim'} ${name} as yourself`);
       const follow = one('[data-follow-player]', entry);
-      follow.textContent = followed ? 'Unfollow' : 'Follow';
+      follow.title = followed ? 'Unfollow player' : 'Follow player';
       follow.setAttribute('aria-pressed', String(followed));
       follow.setAttribute('aria-label', `${followed ? 'Unfollow' : 'Follow'} ${name}`);
     });
@@ -136,6 +137,7 @@
     const name = entry.dataset.trackedPlayer;
     const state = playerState(id);
     if (button.hasAttribute('data-claim-player')) {
+      if (state.claimed && state.claimed !== name) return;
       state.claimed = state.claimed === name ? '' : name;
     } else {
       state.followed = state.followed.includes(name) ? state.followed.filter(player => player !== name) : [...state.followed, name];
