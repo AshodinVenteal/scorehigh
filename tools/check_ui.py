@@ -105,7 +105,15 @@ def main():
         check_width(page)
         page.screenshot(path=str(OUTPUT / 'machines-mobile.png'), full_page=True)
         page.get_by_role('link', name='How it works', exact=True).click()
-        assert page.locator('#format').get_attribute('open') is not None
+        page.wait_for_load_state('networkidle')
+        assert '/how-it-works/281672' in page.url
+        assert page.locator('.tabs [aria-current="page"]').inner_text() == 'How it works'
+        assert page.locator('.instructions').is_visible()
+        for width in [320, 390, 1280]:
+            page.set_viewport_size({'width': width, 'height': 844})
+            check_width(page)
+        page.set_viewport_size({'width': 390, 'height': 844})
+        page.screenshot(path=str(OUTPUT / 'how-it-works-mobile.png'), full_page=True)
         choose_appearance(page, '[data-style-select]', 'portal')
         assert page.locator('html').get_attribute('data-style') == 'portal'
         page.goto(f'{BASE}/ranking/281672', wait_until='networkidle')
@@ -128,6 +136,14 @@ def main():
         assert page.locator('[data-player-search]').input_value() == name
         assert page.locator('.card-details[open]').count() > 0
         assert not page.locator('.portal-directory').is_visible()
+        assert page.locator('.tournament-heading .matchplay-button').is_visible()
+        page.goto(f'{BASE}/', wait_until='networkidle')
+        icons = page.locator('.tournament-icon').all_text_contents()
+        assert icons and all(icon.strip() != '#' for icon in icons)
+        assert page.locator('.tournament-item .matchplay-button').first.is_visible()
+        page.reload(wait_until='networkidle')
+        assert page.locator('.tournament-icon').all_text_contents() == icons
+        check_width(page)
         assert not errors, errors
         no_js = browser.new_context(java_script_enabled=False, viewport={"width": 320, "height": 844})
         plain = no_js.new_page()

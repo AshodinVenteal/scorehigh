@@ -90,3 +90,33 @@ def test_names_are_escaped_and_assets_are_served(client):
     assert '<script>alert(1)</script>' not in html
     assert client.get('/static/scorehigh.css').status_code == 200
     assert client.get('/static/scorehigh.js').status_code == 200
+
+
+def test_how_it_works_has_its_own_page_and_correct_examples(client):
+    html = client.get('/how-it-works/281672').get_data(as_text=True)
+    assert '<h2>How it works</h2>' in html
+    assert '140,000,000' in html
+    assert '441,800,000' in html
+    assert '531,800,000' in html
+    assert '606,800,000' in html
+    assert 'aria-current="page" href="/how-it-works/281672"' in html
+    assert 'href="#format"' not in html
+
+
+def test_tournament_icons_are_distinct_and_repeatable(client, monkeypatch):
+    monkeypatch.setattr(web, 'TOURNAMENT_INFO', {1: 'One', 2: 'Two', 3: 'Three'})
+    icons = web.tournament_icons()
+    assert icons == web.tournament_icons()
+    assert len(set(icons.values())) == 3
+    home = client.get('/').get_data(as_text=True)
+    for icon in icons.values():
+        assert icon in home
+
+
+def test_matchplay_link_available_on_desk_and_inside_tournament(client):
+    target = web.TOURNAMENT_MATCHPLAY_URLS[281672]
+    for path in ['/', '/how-it-works/281672']:
+        html = client.get(path).get_data(as_text=True)
+        assert f'class="matchplay-button" href="{target}"' in html
+        assert 'Open in Match Play' in html
+        assert 'rel="noopener noreferrer"' in html

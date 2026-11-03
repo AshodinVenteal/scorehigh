@@ -1,19 +1,38 @@
 from datetime import datetime, timezone
 from hashlib import sha256
+from dataclasses import replace
+from random import Random
 
 import requests
 from flask import Flask, abort, render_template
 from .ranking import best_cards, player_cards
 from .matchplay_api import get_tournament_data_cached
-from .tournament import MAX_PER_ERA, parse_tournament
+from .tournament import ARENAS, Card, SinglePlayerGame, MAX_PER_ERA, parse_tournament
 
 app = Flask(__name__)
 TOURNAMENT_INFO = {281672: "Test Tournament"}
+# Placeholder links until tournament records supply their Match Play URLs.
+TOURNAMENT_MATCHPLAY_URLS = {281672: "https://app.matchplay.events/tournaments/281672"}
+TOURNAMENT_EMOJI = ("🏆", "🏅", "🎖️", "🏁", "🎯", "🎳", "🕹️", "🎮",
+                    "🎲", "🎪", "🎟️", "🎰", "🏟️", "🎊", "🎉", "🎱")
+
+
+def tournament_icons():
+    """Give listed tournaments repeatable random icons, avoiding duplicates."""
+    icons = {}
+    for tournament_id in sorted(TOURNAMENT_INFO):
+        choices = Random(tournament_id).sample(TOURNAMENT_EMOJI, len(TOURNAMENT_EMOJI))
+        icons[tournament_id] = next(
+            (icon for icon in choices if icon not in icons.values()), choices[0]
+        )
+    return icons
 
 
 @app.context_processor
 def site_context():
     return {"tournaments": TOURNAMENT_INFO, "max_per_era": MAX_PER_ERA,
+            "tournament_icons": tournament_icons(),
+            "matchplay_urls": TOURNAMENT_MATCHPLAY_URLS,
             "static_snapshot": bool(app.config.get("SNAPSHOT_AT"))}
 
 
@@ -73,6 +92,27 @@ def render_machines(tournament_id: int):
         "machines.html", arenas=tournament.arenas_by_id.values(),
         title=tournament_title(tournament_id), tournament_id=tournament_id,
         active_tab="machines",
+    )
+
+
+@app.route("/how-it-works/<int:tournament_id>")
+def render_how_it_works(tournament_id: int):
+    arenas = {arena.short_name: arena for arena in ARENAS}
+    scores = {"Stars": 280_000, "Quicksilver": 340_000,
+              "Creature": 120_000_000, "Theatre": 700_000_000,
+              "Iron Maiden": 360_000_000, "Jurassic Park": 120_000_000}
+    games = [SinglePlayerGame(i, name, "Example", score,
+                              arenas[name].multiplier, arenas[name].era)
+             for i, (name, score) in enumerate(scores.items())]
+    example = Card("Example", games)
+    lower = Card("Example", [replace(games[0], score=100_000), *games[1:]])
+    tron = arenas["TRON"]
+    invalid = Card("Example", [*games, SinglePlayerGame(
+        99, tron.short_name, "Example", 25_000_000, tron.multiplier, tron.era)])
+    return render_template(
+        "how_it_works.html", title=tournament_title(tournament_id),
+        tournament_id=tournament_id, active_tab="how_it_works",
+        example=example, lower=lower, invalid=invalid,
     )
 
 

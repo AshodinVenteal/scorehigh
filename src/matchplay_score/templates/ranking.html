@@ -2,7 +2,7 @@
 {% from "card.html" import breakdown %}
 {% block content %}
 <div class="workspace">
-<nav class="portal-directory panel" aria-label="Pinball directory"><div class="panel-bar"><h2>Navigation</h2></div><a href="{{ url_for('index') }}">All tournaments</a><a aria-current="page" href="{{ url_for('render_ranking', tournament_id=tournament_id) }}">Standings</a><a href="{{ url_for('render_machines', tournament_id=tournament_id) }}">Machines &amp; multipliers</a><a href="#format">Scoring rules</a></nav>
+<nav class="portal-directory panel" aria-label="Pinball directory"><div class="panel-bar"><h2>Navigation</h2></div><a href="{{ url_for('index') }}">All tournaments</a><a aria-current="page" href="{{ url_for('render_ranking', tournament_id=tournament_id) }}">Standings</a><a href="{{ url_for('render_machines', tournament_id=tournament_id) }}">Machines &amp; multipliers</a><a href="{{ url_for('render_how_it_works', tournament_id=tournament_id) }}">Scoring rules</a></nav>
 <section class="standings-section" aria-labelledby="standings-title">
 <div class="section-heading"><div><p class="eyebrow">BEST-CARD RANKING</p><h2 id="standings-title">Standings</h2></div><div class="refresh-controls" data-refresh-controls hidden><button class="text-button" type="button" data-refresh>↻ Refresh</button><button class="text-button" type="button" data-auto aria-pressed="true">Auto: on</button></div></div>
 <p class="section-description">Highest valid card per player.</p>

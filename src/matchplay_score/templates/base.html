@@ -17,8 +17,8 @@
 <div class="site-shell">
 <div class="utility-bar"><a href="{{ url_for('index') }}">Tournaments</a><span>CARD SCORING / PINBALL</span></div>
 {% if tournament_id is defined %}
-<section class="tournament-heading"><p class="eyebrow">TOURNAMENT {{ tournament_id }}</p><h1>{{ title }}</h1></section>
-<nav class="tabs" aria-label="Tournament"><a {% if active_tab == 'standings' %}aria-current="page"{% endif %} href="{{ url_for('render_ranking', tournament_id=tournament_id) }}">Standings</a><a {% if active_tab == 'machines' %}aria-current="page"{% endif %} href="{{ url_for('render_machines', tournament_id=tournament_id) }}">Machines</a><a href="#format">How it works</a></nav>
+<section class="tournament-heading"><div><p class="eyebrow">TOURNAMENT {{ tournament_id }}</p><h1><span class="heading-icon" aria-hidden="true">{{ tournament_icons.get(tournament_id, '🏆') }}</span> {{ title }}</h1></div><a class="matchplay-button" href="{{ matchplay_urls.get(tournament_id, 'https://app.matchplay.events/') }}" target="_blank" rel="noopener noreferrer">Open in Match Play <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a></section>
+<nav class="tabs" aria-label="Tournament"><a {% if active_tab == 'standings' %}aria-current="page"{% endif %} href="{{ url_for('render_ranking', tournament_id=tournament_id) }}">Standings</a><a {% if active_tab == 'machines' %}aria-current="page"{% endif %} href="{{ url_for('render_machines', tournament_id=tournament_id) }}">Machines</a><a {% if active_tab == 'how_it_works' %}aria-current="page"{% endif %} href="{{ url_for('render_how_it_works', tournament_id=tournament_id) }}">How it works</a></nav>
 {% endif %}
 <main id="main" tabindex="-1">{% block content %}{% endblock %}</main>
 <footer class="site-footer"><a class="footer-brand" href="{{ url_for('index') }}">SCOREHIGH</a><span>Scores from <a href="https://matchplay.events/">Match Play</a></span></footer>

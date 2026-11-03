@@ -20,7 +20,8 @@ def export_site(output: Path, base_path: str = "") -> list[str]:
     for tournament_id in web.TOURNAMENT_INFO:
         tournament = parse_tournament(get_tournament_data_cached(tournament_id))
         cards = [parse_card(item, tournament) for item in get_cards(tournament_id)]
-        routes.extend([f"/ranking/{tournament_id}", f"/machines/{tournament_id}"])
+        routes.extend([f"/ranking/{tournament_id}", f"/machines/{tournament_id}",
+                       f"/how-it-works/{tournament_id}"])
         for player in sorted({card.player_name for card in cards}):
             routes.append(f"/player/{tournament_id}/{quote(player, safe='')}")
     previous_snapshot = web.app.config.get("SNAPSHOT_AT")

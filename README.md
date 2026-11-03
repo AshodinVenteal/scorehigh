@@ -14,6 +14,9 @@ uv run flask --app matchplay_score.web run --host 127.0.0.1 --port 8765
 Open http://127.0.0.1:8765/ranking/281672 for the test tournament.
 Pages fetch real scores from the public Match Play API; no API key is required.
 Tournament names and IDs are configured in `src/matchplay_score/web.py`.
+`TOURNAMENT_MATCHPLAY_URLS` holds placeholder event links for the prominent
+Match Play buttons on the tournament desk and in tournament headers. Replace
+these with URLs from tournament records when database integration is added.
 
 ## Frontend
 
@@ -28,6 +31,11 @@ ScoreHigh is a working display name.
 - Player pages include card history; invalid cards remain visible but do not
   become the best valid card or affect the existing ranking calculation.
 - Machine pages show configured machines belonging to the selected tournament.
+- How it works has a separate page with calculated game/card examples and
+  an example showing why a higher-scoring invalid card is excluded.
+- Tournament icons are selected from event-themed emoji using the tournament
+  ID as a random seed. They remain consistent across visits and exports;
+  listed tournaments avoid duplicate icons while the emoji pool allows it.
 - Auto-refresh runs every 60 seconds while the page is visible. It preserves
   the search and expanded cards, skips focused card controls, and keeps the
   previous scores visible if a request fails. The API's existing cache can add

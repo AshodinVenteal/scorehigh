@@ -4,7 +4,7 @@
 <section class="page-heading"><h1>Tournaments</h1></section>
 <section class="panel"><div class="panel-bar"><h2>Tournament list</h2><span>{{ tournaments|length }} listed</span></div>
 {% for id, name in tournaments.items() %}
-<a class="tournament-link" href="{{ url_for('render_ranking', tournament_id=id) }}"><span class="tournament-icon" aria-hidden="true">#</span><span><strong>{{ name }}</strong><small>Best-card standings · Tournament {{ id }}</small></span><span class="link-arrow" aria-hidden="true">→</span></a>
+<div class="tournament-item"><a class="tournament-link" href="{{ url_for('render_ranking', tournament_id=id) }}"><span class="tournament-icon" aria-hidden="true">{{ tournament_icons[id] }}</span><span><strong>{{ name }}</strong><small>Best-card standings · Tournament {{ id }}</small></span><span class="link-arrow" aria-hidden="true">→</span></a><a class="matchplay-button" href="{{ matchplay_urls.get(id, 'https://app.matchplay.events/') }}" target="_blank" rel="noopener noreferrer" aria-label="Open {{ name }} in Match Play (opens in a new tab)">Open in Match Play <span aria-hidden="true">↗</span></a></div>
 {% else %}<p class="empty-state">No tournaments have been listed yet.</p>{% endfor %}
 </section>
 {% include "rules.html" %}

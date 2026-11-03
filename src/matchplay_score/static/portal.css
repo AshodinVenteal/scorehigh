@@ -126,3 +126,6 @@ main{border:0;padding:22px;background:var(--paper)}
 .scoreboard-footer{border-top:2px solid var(--title-bg)}
 @media(max-width:600px){.masthead-inner{padding:16px 13px}.wordmark{font-size:28px;letter-spacing:-1px}.wordmark:after{height:22px;width:5px;margin-left:7px}.brand-ball{width:20px;height:20px}.tabs a{font-size:13px}.panel-bar h3{font-size:13px}}
 @media(max-width:360px){.wordmark{font-size:26px}.brand-ball{display:none}}
+.matchplay-button{background:linear-gradient(#dceff6,#9fc8d8);color:#193745;border:1px solid #648fa4;border-radius:2px;box-shadow:inset 0 1px 0 #fff9,0 1px 2px #0002;font-family:Arial,sans-serif;border-bottom:3px solid var(--trans-pink)}
+:root[data-theme=dark] .matchplay-button{background:linear-gradient(#41687a,#2d4a5a);color:#f0f8fb;border-color:#7ba2b5;border-bottom-color:var(--trans-pink)}
+.tournament-item .tournament-link{border-top:0}
