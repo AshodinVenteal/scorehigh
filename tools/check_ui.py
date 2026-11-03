@@ -71,6 +71,20 @@ def main():
         choose_appearance(page, '[data-score-font-select]', 'segmented')
         page.evaluate('document.fonts.ready')
         assert page.evaluate("document.fonts.check('700 22px \"ScoreHigh Digits\"', '0123456789')")
+        logo_font = page.locator('.logo-title').evaluate('(el) => getComputedStyle(el).fontFamily')
+        for font_choice in ['matrix', 'alarm', 'lcd', 'highway', 'terminal', 'plain', 'segmented']:
+            choose_appearance(page, '[data-score-font-select]', font_choice)
+            page.evaluate('document.fonts.ready')
+            assert page.locator('.logo-title').evaluate('(el) => getComputedStyle(el).fontFamily') == logo_font
+            for width in [320, 390, 1280]:
+                page.set_viewport_size({'width': width, 'height': 844})
+                check_width(page)
+            page.set_viewport_size({'width': 390, 'height': 844})
+            page.screenshot(path=str(OUTPUT / f'score-font-{font_choice}.png'), full_page=True)
+        choose_appearance(page, '[data-score-font-select]', 'lcd')
+        page.reload(wait_until='networkidle')
+        assert page.locator('html').get_attribute('data-score-font') == 'lcd'
+        choose_appearance(page, '[data-score-font-select]', 'segmented')
         for width in [320, 375, 390, 768, 1280]:
             page.set_viewport_size({"width": width, "height": 900 if width > 600 else 844})
             check_width(page)

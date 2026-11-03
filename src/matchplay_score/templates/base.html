@@ -15,7 +15,14 @@
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to scores</a>
-<header class="masthead"><div class="masthead-inner"><a class="wordmark segment-wordmark" href="{{ url_for('index') }}" aria-label="Score High for Trans Lives home"><span class="logo-title" aria-hidden="true">SCORE HIGH</span><span class="logo-subtitle" aria-hidden="true">4 TRANS LIVES</span></a><details class="display-settings" data-theme-settings hidden><summary>Display <span aria-hidden="true">▾</span></summary><div class="display-menu"><label><span>Website style</span><select data-style-select aria-label="Website style"><option value="windows">Classic Windows</option><option value="portal">2000s Portal</option></select></label><label><span>Color mode</span><select data-theme-select aria-label="Color theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label><label><span>Score digits</span><select data-score-font-select aria-label="Score digits"><option value="segmented">Alphanumeric display</option><option value="plain">Plain numbers</option></select></label><small>Saved on this device.</small></div></details></div></header>
+<header class="masthead"><div class="masthead-inner">
+<a class="wordmark segment-wordmark" href="{{ url_for('index') }}" aria-label="Score High for Trans Lives home"><span class="logo-title" aria-hidden="true">SCORE HIGH</span><span class="logo-subtitle" aria-hidden="true">4 TRANS LIVES</span></a>
+<details class="display-settings" data-theme-settings hidden><summary>Display <span aria-hidden="true">▾</span></summary><div class="display-menu">
+<label><span>Website style</span><select data-style-select aria-label="Website style"><option value="windows">Classic Windows</option><option value="portal">2000s Portal</option></select></label>
+<label><span>Color mode</span><select data-theme-select aria-label="Color theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+<label><span>Score digits</span><select data-score-font-select aria-label="Score digits"><option value="segmented">Alphanumeric display</option><option value="matrix">Dot matrix</option><option value="alarm">Alarm clock</option><option value="lcd">LCD Mono</option><option value="highway">Electronic highway sign</option><option value="terminal">Retro terminal</option><option value="plain">Plain numbers</option></select></label>
+<div class="score-font-preview"><span>Score preview</span><strong data-score-preview>531,800,000</strong><small>0123456789</small></div>
+<small>Saved on this device.</small></div></details></div></header>
 <div class="site-shell">
 <div class="utility-bar"><a href="{{ url_for('index') }}">Tournaments</a><span>CARD SCORING / PINBALL</span></div>
 {% if tournament_id is defined %}
