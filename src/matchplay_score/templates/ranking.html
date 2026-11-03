@@ -6,7 +6,7 @@
 <section class="standings-section" aria-labelledby="standings-title">
 <div class="section-heading"><div><p class="eyebrow">BEST-CARD RANKING</p><h2 id="standings-title">Standings</h2></div><div class="refresh-controls" data-refresh-controls hidden><button class="text-button" type="button" data-refresh>↻ Refresh</button><button class="text-button" type="button" data-auto aria-pressed="true">Auto: on</button></div></div>
 <p class="section-description">Highest valid card per player.</p>
-<div class="tracking-toolbar" data-tracking-toolbar hidden><button class="framed-button" type="button" data-following-filter aria-pressed="false">Following only</button><span data-claim-status>No player claimed.</span><small>Claim and follow choices are saved on this device for this tournament.</small></div>
+<div class="tracking-toolbar" data-tracking-toolbar hidden><button class="framed-button" type="button" data-following-filter aria-pressed="false">Following only</button><span data-claim-status>No player claimed.</span></div>
 <div class="search-toolbar" data-search-toolbar hidden><label class="search-field"><span aria-hidden="true">⌕</span><span class="sr-only">Find a player</span><input type="search" data-player-search placeholder="Find a player…" autocomplete="off" spellcheck="false"></label><button class="text-button clear-search" type="button" data-clear-search hidden>Clear</button><button class="framed-button" type="button" data-expand aria-pressed="false">Expand cards</button></div>
 <div class="panel scoreboard" data-score-content>
 <div class="panel-bar"><h3>Overall ranking</h3><span data-player-count>{{ cards|length }} player{{ '' if cards|length == 1 else 's' }}</span></div>
