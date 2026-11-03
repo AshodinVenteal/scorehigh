@@ -1,4 +1,4 @@
-# Python-generated files
+# Python build artifacts
 __pycache__/
 *.py[oc]
 build/
@@ -14,3 +14,7 @@ wheels/
 
 # Generated GitHub Pages output
 _site/
+
+# Test and lint caches
+.pytest_cache/
+.ruff_cache/

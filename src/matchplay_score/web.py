@@ -1,20 +1,47 @@
-from datetime import datetime, timezone
-from hashlib import sha256
 from dataclasses import replace
+from datetime import UTC, datetime
+from hashlib import sha256
+from importlib.metadata import version
 from random import Random
 
 import requests
 from flask import Flask, abort, render_template
+
+from .branding import REPOSITORY_DESCRIPTION, SITE_DESCRIPTION, SITE_TITLE
+from .matchplay_api import get_matchplay_standings, get_tournament_data_cached
 from .ranking import best_cards, player_cards
-from .matchplay_api import get_tournament_data_cached
-from .tournament import ARENAS, Card, SinglePlayerGame, MAX_PER_ERA, parse_tournament
+from .tournament import (
+    ARENAS,
+    CARD_GAME_LIMIT,
+    MAX_PER_ERA,
+    Card,
+    SinglePlayerGame,
+    parse_tournament,
+)
 
 app = Flask(__name__)
+APP_VERSION = version("matchplay-score")
 TOURNAMENT_INFO = {281672: "Test Tournament"}
 # Placeholder links until tournament records supply their Match Play URLs.
 TOURNAMENT_MATCHPLAY_URLS = {281672: "https://app.matchplay.events/tournaments/281672"}
-TOURNAMENT_EMOJI = ("🏆", "🏅", "🎖️", "🏁", "🎯", "🎳", "🕹️", "🎮",
-                    "🎲", "🎪", "🎟️", "🎰", "🏟️", "🎊", "🎉", "🎱")
+TOURNAMENT_EMOJI = (
+    "🏆",
+    "🏅",
+    "🎖️",
+    "🏁",
+    "🎯",
+    "🎳",
+    "🕹️",
+    "🎮",
+    "🎲",
+    "🎪",
+    "🎟️",
+    "🎰",
+    "🏟️",
+    "🎊",
+    "🎉",
+    "🎱",
+)
 
 
 def tournament_icons():
@@ -30,14 +57,22 @@ def tournament_icons():
 
 @app.context_processor
 def site_context():
-    return {"tournaments": TOURNAMENT_INFO, "max_per_era": MAX_PER_ERA,
-            "tournament_icons": tournament_icons(),
-            "matchplay_urls": TOURNAMENT_MATCHPLAY_URLS,
-            "static_snapshot": bool(app.config.get("SNAPSHOT_AT"))}
+    return {
+        "tournaments": TOURNAMENT_INFO,
+        "max_per_era": MAX_PER_ERA,
+        "card_game_limit": CARD_GAME_LIMIT,
+        "asset_version": APP_VERSION,
+        "site_title": SITE_TITLE,
+        "site_description": SITE_DESCRIPTION,
+        "repository_description": REPOSITORY_DESCRIPTION,
+        "tournament_icons": tournament_icons(),
+        "matchplay_urls": TOURNAMENT_MATCHPLAY_URLS,
+        "static_snapshot": bool(app.config.get("SNAPSHOT_AT")),
+    }
 
 
 def score_timestamp():
-    return app.config.get("SNAPSHOT_AT") or datetime.now(timezone.utc).isoformat()
+    return app.config.get("SNAPSHOT_AT") or datetime.now(UTC).isoformat()
 
 
 def tournament_title(tournament_id):
@@ -47,7 +82,7 @@ def tournament_title(tournament_id):
 @app.template_filter("commafy")
 def commafy(value: int) -> str:
     "Apply thousands separator to integers"
-    return "{:,d}".format(value)
+    return f"{value:,d}"
 
 
 @app.template_filter("card_key")
@@ -57,11 +92,25 @@ def card_key(card) -> str:
 
 @app.route("/ranking/<int:tournament_id>")
 def render_ranking(tournament_id: int):
+    return standings_page(tournament_id)
+
+
+@app.route("/monitor/<int:tournament_id>")
+def render_monitor(tournament_id: int):
+    return standings_page(tournament_id, monitor=True)
+
+
+def standings_page(tournament_id: int, *, monitor: bool = False):
     cards = best_cards(tournament_id, use_cache=True)
     title = tournament_title(tournament_id)
     return render_template(
-        "ranking.html", cards=cards, title=title, tournament_id=tournament_id,
-        updated_at=score_timestamp(), active_tab="standings",
+        "ranking.html",
+        cards=cards,
+        title=title,
+        tournament_id=tournament_id,
+        updated_at=score_timestamp(),
+        active_tab="standings",
+        monitor=monitor,
     )
 
 
@@ -75,13 +124,20 @@ def render_player(tournament_id: int, player_name: str):
         abort(404)
     valid_cards = [card for card in cards if card.is_valid()]
     standings = best_cards(tournament_id, use_cache=True)
-    rank = next((i for i, card in enumerate(standings, 1)
-                 if card.player_name == player_name), None)
+    rank = next(
+        (i for i, card in enumerate(standings, 1) if card.player_name == player_name),
+        None,
+    )
     return render_template(
-        "player.html", cards=cards, player_name=player_name,
-        best_card=valid_cards[0] if valid_cards else None, rank=rank,
-        title=tournament_title(tournament_id), tournament_id=tournament_id,
-        updated_at=score_timestamp(), active_tab="standings",
+        "player.html",
+        cards=cards,
+        player_name=player_name,
+        best_card=valid_cards[0] if valid_cards else None,
+        rank=rank,
+        title=tournament_title(tournament_id),
+        tournament_id=tournament_id,
+        updated_at=score_timestamp(),
+        active_tab="standings",
     )
 
 
@@ -89,8 +145,10 @@ def render_player(tournament_id: int, player_name: str):
 def render_machines(tournament_id: int):
     tournament = parse_tournament(get_tournament_data_cached(tournament_id))
     return render_template(
-        "machines.html", arenas=tournament.arenas_by_id.values(),
-        title=tournament_title(tournament_id), tournament_id=tournament_id,
+        "machines.html",
+        arenas=tournament.arenas_by_id.values(),
+        title=tournament_title(tournament_id),
+        tournament_id=tournament_id,
         active_tab="machines",
     )
 
@@ -98,36 +156,86 @@ def render_machines(tournament_id: int):
 @app.route("/how-it-works/<int:tournament_id>")
 def render_how_it_works(tournament_id: int):
     arenas = {arena.short_name: arena for arena in ARENAS}
-    scores = {"Stars": 280_000, "Quicksilver": 340_000,
-              "Creature": 120_000_000, "Theatre": 700_000_000,
-              "Iron Maiden": 360_000_000, "Jurassic Park": 120_000_000}
-    games = [SinglePlayerGame(i, name, "Example", score,
-                              arenas[name].multiplier, arenas[name].era)
-             for i, (name, score) in enumerate(scores.items())]
+    scores = {
+        "Stars": 280_000,
+        "Quicksilver": 340_000,
+        "Creature": 120_000_000,
+        "Theatre": 700_000_000,
+        "Iron Maiden": 360_000_000,
+        "Jurassic Park": 120_000_000,
+    }
+    games = [
+        SinglePlayerGame(
+            i, name, "Example", score, arenas[name].multiplier, arenas[name].era
+        )
+        for i, (name, score) in enumerate(scores.items())
+    ]
     example = Card("Example", games)
     lower = Card("Example", [replace(games[0], score=100_000), *games[1:]])
     tron = arenas["TRON"]
-    invalid = Card("Example", [*games, SinglePlayerGame(
-        99, tron.short_name, "Example", 25_000_000, tron.multiplier, tron.era)])
+    invalid = Card(
+        "Example",
+        [
+            *games,
+            SinglePlayerGame(
+                99, tron.short_name, "Example", 25_000_000, tron.multiplier, tron.era
+            ),
+        ],
+    )
     return render_template(
-        "how_it_works.html", title=tournament_title(tournament_id),
-        tournament_id=tournament_id, active_tab="how_it_works",
-        example=example, lower=lower, invalid=invalid,
+        "how_it_works.html",
+        title=tournament_title(tournament_id),
+        tournament_id=tournament_id,
+        active_tab="how_it_works",
+        example=example,
+        lower=lower,
+        invalid=invalid,
     )
 
 
 @app.errorhandler(requests.RequestException)
 def upstream_error(error):
-    return render_template("error.html", title="Scores unavailable",
-                           message="We couldn't reach Match Play. Please try again in a moment."), 503
+    return render_template(
+        "error.html",
+        title="Scores unavailable",
+        message="We couldn't reach Match Play. Please try again in a moment.",
+    ), 503
 
 
 @app.errorhandler(404)
 def not_found(error):
-    return render_template("error.html", title="Page not found",
-                           message="This player or page couldn't be found. Choose a tournament to continue."), 404
+    return render_template(
+        "error.html",
+        title="Page not found",
+        message="This player or page couldn't be found. Choose a tournament to continue.",
+    ), 404
 
 
 @app.route("/")
 def index():
-    return render_template("index.html", tournaments=TOURNAMENT_INFO)
+    ticker = []
+    unavailable = []
+    for tournament_id, title in TOURNAMENT_INFO.items():
+        try:
+            standings = get_matchplay_standings(tournament_id)
+            data = get_tournament_data_cached(tournament_id)
+            players = {player["playerId"]: player["name"] for player in data["players"]}
+            for standing in standings:
+                ticker.append(
+                    {
+                        "tournament": title,
+                        "tournament_id": tournament_id,
+                        "player": players.get(standing["playerId"], "Unknown player"),
+                        "position": standing["position"],
+                        "points": standing["points"],
+                    }
+                )
+        except requests.RequestException:
+            unavailable.append(title)
+    return render_template(
+        "index.html",
+        tournaments=TOURNAMENT_INFO,
+        ticker=ticker,
+        ticker_unavailable=unavailable,
+        updated_at=score_timestamp(),
+    )

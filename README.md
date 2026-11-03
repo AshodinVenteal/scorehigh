@@ -1,97 +1,84 @@
-# matchplay-score-tournament
+# ScoreHigh 4 Trans Lives PAPA-Style Scoring Page
 
-Support code for a 90s-style card format pinball tournament, where a card includes your entire score on each pinball table you play (times a multiplier to balance different machines against each other).
+Code and Development for the Front End of the Scoring System for Tournaments that utilize card-based scoring
+
+[Public site](https://ashodinventeal.github.io/scorehigh/) | [Preview](https://ashodinventeal.github.io/scorehigh-preview/)
+
+ScoreHigh multiplies each machine score by its configured multiplier and ranks each player by their best valid card. A card allows two games from each of three eras. Cards with fewer than six games show their progress and unused slots; cards over an era limit stay in player history but do not count toward standings.
 
 ## Run locally
 
-Requires Python 3.14 and uv:
+Python 3.14 and [uv](https://docs.astral.sh/uv/) are required.
 
 ```sh
 uv sync --group dev
-uv run flask --app matchplay_score.web run --host 127.0.0.1 --port 8765
+uv run scorehigh --host 127.0.0.1 --port 8765
 ```
 
-Open http://127.0.0.1:8765/ranking/281672 for the test tournament.
-Pages fetch real scores from the public Match Play API; no API key is required.
-Tournament names and IDs are configured in `src/matchplay_score/web.py`.
-`TOURNAMENT_MATCHPLAY_URLS` holds placeholder event links for the prominent
-Match Play buttons on the tournament desk and external tabs within tournaments. Replace
-these with URLs from tournament records when database integration is added.
+Open `http://127.0.0.1:8765`. The older `matchplay-score` command remains available.
 
-## Frontend
+Configure tournament IDs, names, and Match Play links in `src/matchplay_score/web.py`. Machine eras and multipliers live in `src/matchplay_score/tournament.py`. The configured test event is tournament `281672`.
 
-The interface uses Flask/Jinja, local CSS, and vanilla JavaScript. No Node build
-or frontend framework is needed. The framed panels, restrained era colors,
-compact navigation tabs, and system fonts use a Windows 95/2000 aesthetic.
-`windows.css` holds the visual treatment over the shared responsive layout.
-ScoreHigh is a working display name.
+## Standings and event display
 
-- Standings show complete, unrounded totals and searchable player names.
-- Each card expands into raw machine scores, multipliers, and adjusted points.
-- Player pages include card history; invalid cards remain visible but do not
-  become the best valid card or affect the existing ranking calculation.
-- Machine pages show configured machines belonging to the selected tournament.
-- How it works has a separate page with calculated game/card examples and
-  an example showing why a higher-scoring invalid card is excluded.
-- Tournament icons are selected from event-themed emoji using the tournament
-  ID as a random seed. They remain consistent across visits and exports;
-  listed tournaments avoid duplicate icons while the emoji pool allows it.
-- Claim player marks one player as you per tournament; Follow highlights any
-  other players. Following only filters the standings without renumbering.
-  These are local browser preferences keyed by tournament and display name,
-  not verified account claims or shared records. Rename changes require
-  claiming/following again. Preferences persist across score refreshes.
-- Header lettering uses self-hosted DSEG14 Classic by keshikan, distributed
-  under the included SIL Open Font License. Score totals default to plain
-  monospaced digits. Display → Score digits selects optional display fonts,
-  saved on the device. Smaller raw scores retain plain type.
-  Score-only alternatives include Dot matrix (Doto), Alarm clock (DSEG7),
-  LCD Mono (Share Tech Mono), Electronic highway sign (Sixtyfour), and Retro
-  terminal (VT323). These are style labels; Electronic highway sign uses
-  Sixtyfour's square LED-like glyphs. The logo and body fonts are unchanged.
-  All fonts are self-hosted with their original OFL license notices.
-  New visitors default to large, plain monospaced sans-serif digits. Explicit
-  score-font selections remain saved; display fonts are optional.
-- Auto-refresh runs every 60 seconds while the page is visible. It preserves
-  the search and expanded cards, skips focused card controls, and keeps the
-  previous scores visible if a request fails. The API's existing cache can add
-  up to 60 seconds of latency. Refresh can be paused.
-- The Display menu has two independent settings. Website style offers Classic
-  Windows and 2000s Portal (MSN/Yahoo-style columns, GameTrailers-era steel
-  section bars, and subtle trans flag blue/pink accents).
-  Color mode offers System, Light, and Dark for either style. System follows
-  device appearance changes; style, color, and refresh preferences are saved
-  on the device. Classic Windows is the initial style.
-- Navigation and card breakdowns work without JavaScript; refresh and search
-  controls are shown only when JavaScript is available.
+The standings support search, expandable machine scores, and player history. Claim and follow selections are stored on the viewer's device; they do not create accounts or change tournament records. The mobile disclosure arrow sits below the claim/follow controls. The Machines page opens its scoring rules by default, and How it works has its own examples.
 
-Run checks with `uv run pytest`. Existing API integration tests need network
-access; `uv run pytest tests/test_web.py tests/test_arenas.py` runs offline.
+The Monitor button opens the event display. Page one shows prominent cards for ranks 1-3 and rows for ranks 4-8. Later pages show the remaining players, with capacity adjusted to the available height. Pages rotate every 12 seconds with a whole-board fade; manual paging, pause, fullscreen, and reduced motion are supported. Common landscape sizes from 1024x768 through 2560x1440 are checked, including 1600x900 and 1920x1080.
 
-For browser checks, start the local server, then run
-`uv run --with playwright python tools/check_ui.py`. This requires an installed
-Playwright Chromium browser and saves mobile/desktop screenshots in `.preview/`.
+Display settings provide light/dark/system colors, a simple layout, Classic Windows, and a 2000s Portal layout. Standings scores default to readable monospace; the event display uses 7 Segment Display. The optional score fonts are bundled locally with their license notices.
 
-## GitHub Pages
+## Score snapshots and caching
 
-Public site: https://ashodinventeal.github.io/scorehigh/
+The public site uses GitHub Pages. A scheduled workflow reads Match Play and publishes static score snapshots about every five minutes; the browser checks published snapshots every 60 seconds. A failed build leaves the existing deployment in place.
 
-The Pages workflow builds a complete static score snapshot from Match Play
-on pushes, manual dispatch, and a five-minute schedule. GitHub may delay
-scheduled runs. Snapshot times are shown explicitly; the browser checks for
-new published snapshots every 60 seconds when Auto is enabled. GitHub Pages
-does not run Flask, and Match Play's CORS policy prevents direct browser API
-requests from the Pages domain. No credentials or third-party proxy are used.
+Server requests share a 60-second cache and one-request-per-second pacing. Rate-limit responses respect Retry-After with at least a 60-second cooldown. Visitors to the static site do not make direct Match Play API calls. The tournament ticker shows native Match Play positions and points; the standings show ScoreHigh card totals.
 
-Build locally with:
+Build the public snapshot locally:
 
 ```sh
 uv run python -m matchplay_score.export --output _site --base-path /scorehigh
 ```
 
-The Vercel entrypoint is retained for anyone running the live Flask backend.
+This command uses real tournament data. The separate preview uses clearly labeled simulated data:
 
-Original scoring code: Elia Lake / arborelia. Copyright and terms are retained
-in `LICENSE.txt`. Portal visual reference:
-[GameTrailers, 2004](https://www.webdesignmuseum.org/gallery/gametrailers-in-2004).
+```sh
+uv run python tools/build_tournament_demo.py --output .preview/demo/index.html
+```
 
+## Project structure
+
+- `src/matchplay_score/`: scoring, cached API reads, Flask routes, and static export.
+- `templates/components.html`: shared game banners and card progress labels.
+- `static/matchplay.css`: simple standings and shared banners.
+- `static/monitor.css` and `static/monitor.js`: event display layout and paging.
+- `static/scorehigh.js`: display preferences, player tracking, disclosures, and refresh.
+- `tests/`: offline scoring, rendering, export, and API-cache checks.
+- `tools/`: demo export and browser checks.
+
+## Checks and packages
+
+```sh
+uv run pytest
+uv run ruff check src tests tools
+uv build
+```
+
+The default tests run offline. To run the public API integration check:
+
+```sh
+uv run pytest -m integration
+```
+
+For browser checks, install Chromium once, then point the checker at the demo export or a running site:
+
+```sh
+uv run --with playwright playwright install chromium
+uv run --with playwright python tools/check_ui.py --preview-dir .preview/demo
+uv run --with playwright python tools/check_monitor_responsive.py --preview-dir .preview/demo
+```
+
+## Attribution and licensing
+
+Original scoring code: Elia Lake / arborelia, copyright 2026. Original terms are retained unchanged in `LICENSE.txt`.
+
+Font notices are included in `src/matchplay_score/static/fonts/`. The small comma image preserves the outline from 7 Segment Display by Bernard Teo, based on Mylicia's segment font, under the included CC BY-SA 3.0 terms. Other font families retain their own notices. This repository does not relicense those assets.

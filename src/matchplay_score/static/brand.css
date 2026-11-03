@@ -1,16 +1,17 @@
 @font-face{font-family:'ScoreHigh Logo';src:url('fonts/DSEG14Classic-Italic.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
 /* Only digits use the display face; commas retain a normal width and shape. */
-@font-face{font-family:'ScoreHigh Digits';src:url('fonts/DSEG14Classic-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;unicode-range:U+0030-0039}
+@font-face{font-family:'ScoreHigh Digits';src:url('fonts/seven-segment/7-segment-display.otf') format('opentype');font-weight:700;font-style:normal;font-display:swap;unicode-range:U+0030-0039}
 :root{--score-font:'Cascadia Mono','SFMono-Regular',Consolas,'Liberation Mono',monospace}
 :root[data-score-font=plain]{--score-font:'Cascadia Mono','SFMono-Regular',Consolas,'Liberation Mono',monospace}
 :root[data-score-font=segmented]{--score-font:'ScoreHigh Digits','Courier New',monospace}
-@font-face{font-family:'ScoreHigh Alarm';src:url('fonts/DSEG7Classic-Bold.woff2') format('woff2');font-weight:700;font-display:swap;unicode-range:U+0030-0039}
+:root[data-score-font=segmented] .score-comma,html[data-monitor=true] .score-comma{display:inline-block;position:relative;overflow:visible;width:.18em;height:.234em;font-family:inherit;font-size:1em;font-weight:inherit;font-style:normal;line-height:0;vertical-align:-.156em;letter-spacing:0;color:transparent}
+:root[data-score-font=segmented] .score-comma::before,html[data-monitor=true] .score-comma::before{content:'';position:absolute;left:50%;top:0;transform:translateX(-50%);width:.156em;height:100%;background:var(--ink);-webkit-mask:url('images/seven-segment-comma.svg') center/contain no-repeat;mask:url('images/seven-segment-comma.svg') center/contain no-repeat}
+:root[data-score-font=segmented] .score-comma-text,html[data-monitor=true] .score-comma-text{position:absolute;width:0;height:0;overflow:hidden}
 @font-face{font-family:'ScoreHigh Matrix';src:url('fonts/Doto.ttf') format('truetype');font-weight:100 900;font-display:swap;unicode-range:U+0030-0039}
 @font-face{font-family:'ScoreHigh LCD';src:url('fonts/ShareTechMono.ttf') format('truetype');font-weight:700;font-display:swap;unicode-range:U+0030-0039}
 @font-face{font-family:'ScoreHigh Highway';src:url('fonts/Sixtyfour.ttf') format('truetype');font-weight:700;font-display:swap;unicode-range:U+0030-0039}
 @font-face{font-family:'ScoreHigh Terminal';src:url('fonts/VT323.ttf') format('truetype');font-weight:700;font-display:swap;unicode-range:U+0030-0039}
 :root[data-score-font=matrix]{--score-font:'ScoreHigh Matrix','Courier New',monospace}
-:root[data-score-font=alarm]{--score-font:'ScoreHigh Alarm','Courier New',monospace}
 :root[data-score-font=lcd]{--score-font:'ScoreHigh LCD','Courier New',monospace}
 :root[data-score-font=highway]{--score-font:'ScoreHigh Highway','Courier New',monospace}
 :root[data-score-font=terminal]{--score-font:'ScoreHigh Terminal','Courier New',monospace}
@@ -25,7 +26,7 @@
 .masthead .segment-wordmark .logo-subtitle{font:400 16px/1.5 'ScoreHigh Logo','Courier New',monospace;letter-spacing:1px;white-space:nowrap}
 .masthead a.segment-wordmark>span.logo-title,.masthead a.segment-wordmark>span.logo-subtitle{color:#ffdc79}
 .segment-wordmark:before{content:'';position:absolute;left:0;right:0;bottom:-5px;height:3px;background:linear-gradient(90deg,#a8def0 0 20%,#f0c6d7 20% 40%,#fff 40% 60%,#f0c6d7 60% 80%,#a8def0 80%)}
-.score-info>strong,.adjusted-score,.breakdown-total>strong,.history-total,.score-formula strong,.comparison-row>strong,.player-stats>div:nth-child(2)>strong{font-family:var(--score-font);font-weight:700;font-style:normal;letter-spacing:.2px;font-variant-numeric:tabular-nums;text-shadow:none;line-height:1.6}
+.score-info>strong,.adjusted-score,.breakdown-total>strong,.history-total,.score-formula strong,.comparison-row>strong,.player-stats>div:nth-child(2)>strong{font-family:var(--score-font);font-weight:700;font-style:normal;letter-spacing:.2px;font-variant-numeric:tabular-nums;font-kerning:none;font-synthesis:none;text-shadow:none;line-height:1.6}
 .score-info>strong{font-size:22px}.adjusted-score{font-size:15px}.history-total{font-size:21px}.breakdown-total>strong{font-size:17px}.score-formula strong,.comparison-row>strong{font-size:20px}.player-stats>div:nth-child(2)>strong{font-size:24px}
 :root:not([data-score-font]) .score-info>strong,:root[data-score-font=plain] .score-info>strong{font-size:28px}
 :root[data-score-font=plain] .history-total,:root[data-score-font=plain] .comparison-row>strong{font-size:26px}
@@ -47,6 +48,7 @@
 }
 @media(max-width:360px){.masthead .segment-wordmark .logo-title{font-size:20px}.masthead .segment-wordmark .logo-subtitle{font-size:10px}.masthead-inner{gap:8px}.score-info>strong{font-size:20px}.score-info>a{display:none}.tournament-item .matchplay-button{width:106px;max-width:106px;font-size:12px}.tabs a{font-size:11px}.adjusted-score{font-size:13px}.breakdown-total>strong{font-size:15px}}
 .tracking-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin:12px 0;font-size:13px}
+.monitor-podium,.monitor-games{display:none}
 .tracking-toolbar small{flex-basis:100%;color:var(--muted);font-size:12px}
 .player-controls{display:flex;align-items:center;gap:10px;padding:0 14px;flex-wrap:wrap}
 .player-controls .text-button{min-height:44px;font-size:13px}

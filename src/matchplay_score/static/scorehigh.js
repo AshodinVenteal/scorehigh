@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  document.documentElement.classList.add('has-script');
   const one = (selector, root = document) => root.querySelector(selector);
   const all = (selector, root = document) => [...root.querySelectorAll(selector)];
   const readSetting = key => { try { return localStorage.getItem(key); } catch { return null; } };
@@ -8,7 +9,7 @@
   const styleSelect = one('[data-style-select]');
   const scoreFontSelect = one('[data-score-font-select]');
   const setScoreFont = value => {
-    const selected = ['segmented', 'matrix', 'alarm', 'lcd', 'highway', 'terminal', 'plain'].includes(value) ? value : 'plain';
+    const selected = value === 'alarm' ? 'segmented' : (['segmented', 'matrix', 'lcd', 'highway', 'terminal', 'plain'].includes(value) ? value : 'plain');
     document.documentElement.dataset.scoreFont = selected;
     scoreFontSelect.value = selected;
   };
@@ -18,12 +19,15 @@
     saveSetting('scorehigh-score-font', scoreFontSelect.value);
   });
   const setStyle = style => {
-    const selected = style === 'portal' ? 'portal' : 'windows';
+    const selected = ['portal', 'windows', 'matchplay'].includes(style) ? style : 'matchplay';
     document.documentElement.dataset.style = selected;
     one('[data-portal-stylesheet]').disabled = selected !== 'portal';
+    all('[data-matchplay-stylesheet], [data-monitor-stylesheet]').forEach(sheet => { sheet.disabled = selected !== 'matchplay'; });
     styleSelect.value = selected;
   };
-  setStyle(readSetting('scorehigh-style'));
+  const monitor = document.documentElement.dataset.monitor === 'true' || new URLSearchParams(location.search).get('display') === 'monitor';
+  if (monitor) document.documentElement.dataset.monitor = 'true';
+  setStyle(monitor ? 'matchplay' : readSetting('scorehigh-style'));
   styleSelect.addEventListener('change', () => {
     setStyle(styleSelect.value);
     saveSetting('scorehigh-style', styleSelect.value);
@@ -60,6 +64,78 @@
   addEventListener('hashchange', openFormat);
   all('a[href="#format"]').forEach(link => link.addEventListener('click', () => { one('#format').open = true; }));
   openFormat();
+
+  const formatScoreSeparators = () => {
+    all('.score-info > strong, .podium-total, .adjusted-score, .breakdown-total > strong, .history-total, .score-formula strong, .comparison-row > strong, .player-stats > div:nth-child(2) > strong, .score-font-preview > strong').forEach(score => {
+      if (score.querySelector('.score-comma') || !score.textContent.includes(',')) return;
+      const parts = score.textContent.split(',');
+      score.setAttribute('aria-label', score.textContent);
+      score.replaceChildren();
+      parts.forEach((part, index) => {
+        if (index) {
+          const comma = document.createElement('span');
+          comma.className = 'score-comma';
+          const text = document.createElement('span');
+          text.className = 'score-comma-text';
+          text.textContent = ',';
+          comma.append(text);
+          score.append(comma);
+        }
+        score.append(document.createTextNode(part));
+      });
+    });
+  };
+  formatScoreSeparators();
+
+  const ticker = one('[data-ticker]');
+  if (ticker) {
+    let paused = false;
+    let checking = false;
+    const motion = matchMedia('(prefers-reduced-motion: reduce)');
+    const prepareTicker = () => {
+      const track = one('[data-ticker-track]', ticker);
+      const group = one('.ticker-group', track);
+      all('[data-ticker-copy]', track).forEach(node => node.remove());
+      track.classList.remove('is-running');
+      if (!motion.matches && group.querySelector('a')) {
+        const copy = group.cloneNode(true);
+        copy.setAttribute('aria-hidden', 'true');
+        copy.setAttribute('inert', '');
+        copy.dataset.tickerCopy = 'true';
+        track.append(copy);
+        track.style.setProperty('--ticker-duration', `${Math.max(30, group.scrollWidth / 35)}s`);
+        track.classList.add('is-running');
+      }
+    };
+    const pause = one('[data-ticker-pause]', ticker);
+    pause.hidden = false;
+    pause.addEventListener('click', () => {
+      paused = !paused;
+      ticker.classList.toggle('is-paused', paused);
+      pause.setAttribute('aria-pressed', String(paused));
+      pause.textContent = paused ? 'Resume' : 'Pause';
+    });
+    motion.addEventListener('change', prepareTicker);
+    prepareTicker();
+    setInterval(async () => {
+      if (checking || document.hidden || ticker.contains(document.activeElement)) return;
+      checking = true;
+      try {
+        const response = await fetch(location.href, { cache: 'no-store', signal: AbortSignal.timeout(20000) });
+        if (!response.ok) return;
+        const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+        const incoming = one('[data-ticker]', doc);
+        if (incoming && incoming.dataset.updatedAt !== ticker.dataset.updatedAt) {
+          one('[data-ticker-track]', ticker).replaceWith(one('[data-ticker-track]', incoming));
+          ticker.dataset.updatedAt = incoming.dataset.updatedAt;
+          prepareTicker();
+        }
+      } catch { /* Keep the last published standings on a failed update. */ }
+      finally { checking = false; }
+    }, 60000);
+  }
+
+  const monitorDisplay = window.ScoreHighMonitor.create({ enabled: monitor, one, all });
 
   const search = one('[data-player-search]');
   const clear = one('[data-clear-search]');
@@ -147,6 +223,20 @@
     applyTracking();
     filterPlayers();
   });
+  const syncCardToggle = details => {
+    const button = details.closest('.ranking-entry')?.querySelector('[data-card-toggle]');
+    button?.setAttribute('aria-expanded', String(details.open));
+  };
+  document.addEventListener('click', event => {
+    const button = event.target.closest('[data-card-toggle]');
+    if (!button) return;
+    const details = button.closest('.ranking-entry').querySelector('.card-details');
+    details.open = !details.open;
+    syncCardToggle(details);
+  });
+  document.addEventListener('toggle', event => {
+    if (event.target.matches('.ranking-entry .card-details')) syncCardToggle(event.target);
+  }, true);
   if (search) {
     one('[data-search-toolbar]').hidden = false;
     search.addEventListener('input', filterPlayers);
@@ -164,7 +254,7 @@
   if (!status) return;
   const refreshButton = one('[data-refresh]');
   const autoButton = one('[data-auto]');
-  let auto = readSetting('scorehigh-auto') !== 'off';
+  let auto = monitor || readSetting('scorehigh-auto') !== 'off';
   let busy = false;
   let lastUpdated = new Date(status.dataset.updatedAt);
   const staticSnapshot = status.dataset.staticSnapshot === 'true';
@@ -203,8 +293,11 @@
       });
       const scrollY = window.scrollY;
       current.replaceWith(incoming);
+      all('.ranking-entry .card-details').forEach(syncCardToggle);
+      formatScoreSeparators();
       applyTracking();
       filterPlayers();
+      monitorDisplay.layout();
       window.scrollTo({ top: scrollY, behavior: 'instant' });
       lastUpdated = new Date(timestamp.dataset.updatedAt);
       failed = false;
