@@ -1,0 +1,33 @@
+import requests
+from functools import cache
+from cachetools import cached, TTLCache
+
+
+@cache
+def get_tournament_data_cached(tournament_id: int) -> dict:
+    return get_tournament_data(tournament_id)
+
+
+def get_tournament_data(tournament_id: int) -> dict:
+    url = f"https://api.matchplay.events/api/tournaments/{tournament_id}?includeArenas=true&includePlayers=true"
+    response = requests.get(url, timeout=15)
+    response.raise_for_status()
+    return response.json()["data"]
+
+
+@cached(TTLCache(10, ttl=60))
+def get_cards(tournament_id: int) -> list[dict]:
+    url = f"https://api.matchplay.events/api/tournaments/{tournament_id}/cards"
+    return get_paginated_data(url)
+
+
+def get_paginated_data(url: str) -> list[dict]:
+    response = requests.get(url, timeout=15)
+    response.raise_for_status()
+    response_json = response.json()
+    items: list = response_json["data"]
+    next: str = response_json["links"]["next"]
+    if next is not None:
+        return items + get_paginated_data(next)
+    else:
+        return items

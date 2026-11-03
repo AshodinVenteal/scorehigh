@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173c42">
+  <meta name="description" content="Pinball tournament standings, best score cards, and machine multipliers.">
+  <title>{% block title %}{{ title|default('Tournaments') }} · ScoreHigh{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='scorehigh.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='windows.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='portal.css') }}" data-portal-stylesheet disabled>
+  <script src="{{ url_for('static', filename='scorehigh.js') }}" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to scores</a>
+<header class="masthead"><div class="masthead-inner"><a class="wordmark" href="{{ url_for('index') }}" aria-label="ScoreHigh home"><span class="brand-ball" aria-hidden="true"></span>SCORE<span>HIGH</span><span class="brand-tag">PINBALL</span></a><span class="masthead-note">EVERY GAME COUNTS.</span><details class="display-settings" data-theme-settings hidden><summary>Display <span aria-hidden="true">▾</span></summary><div class="display-menu"><label><span>Website style</span><select data-style-select aria-label="Website style"><option value="windows">Classic Windows</option><option value="portal">2000s Portal</option></select></label><label><span>Color mode</span><select data-theme-select aria-label="Color theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label><small>Saved on this device.</small></div></details></div></header>
+<div class="site-shell">
+<div class="utility-bar"><a href="{{ url_for('index') }}">Tournament desk</a><span>CARD SCORING / PINBALL</span></div>
+{% if tournament_id is defined %}
+<section class="tournament-heading"><p class="eyebrow">TOURNAMENT {{ tournament_id }}</p><h1>{{ title }}</h1><p>One card. Every machine score. Your best result.</p></section>
+<nav class="tabs" aria-label="Tournament"><a {% if active_tab == 'standings' %}aria-current="page"{% endif %} href="{{ url_for('render_ranking', tournament_id=tournament_id) }}">Standings</a><a {% if active_tab == 'machines' %}aria-current="page"{% endif %} href="{{ url_for('render_machines', tournament_id=tournament_id) }}">Machines</a><a href="#format">How it works</a></nav>
+{% endif %}
+<main id="main" tabindex="-1">{% block content %}{% endblock %}</main>
+<footer class="site-footer"><a class="footer-brand" href="{{ url_for('index') }}">SCOREHIGH</a><span>Pinball. Pencil optional.</span><span>Scores from <a href="https://matchplay.events/">Match Play</a></span></footer>
+</div>
+</body>
+</html>

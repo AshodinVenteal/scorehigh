@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "card.html" import breakdown %}
+{% block content %}
+<div class="workspace">
+<nav class="portal-directory panel" aria-label="Pinball directory"><div class="panel-bar"><h2>Pinball Central</h2></div><a href="{{ url_for('index') }}">Tournament directory</a><a aria-current="page" href="{{ url_for('render_ranking', tournament_id=tournament_id) }}">Tournament standings</a><a href="{{ url_for('render_machines', tournament_id=tournament_id) }}">Machines &amp; multipliers</a><a href="#format">Scoring explained</a><div class="portal-directory-note"><strong>Your tournament.<br>Your best card.</strong><p>Follow the scores, check a card, and find your place on the board.</p></div></nav>
+<section class="standings-section" aria-labelledby="standings-title">
+<div class="section-heading"><div><p class="eyebrow">BEST-CARD RANKING</p><h2 id="standings-title">Standings</h2></div><div class="refresh-controls" data-refresh-controls hidden><button class="text-button" type="button" data-refresh>↻ Refresh</button><button class="text-button" type="button" data-auto aria-pressed="true">Auto: on</button></div></div>
+<p class="section-description">Highest valid card per player.</p>
+<div class="search-toolbar" data-search-toolbar hidden><label class="search-field"><span aria-hidden="true">⌕</span><span class="sr-only">Find a player</span><input type="search" data-player-search placeholder="Find a player…" autocomplete="off" spellcheck="false"></label><button class="text-button clear-search" type="button" data-clear-search hidden>Clear</button><button class="framed-button" type="button" data-expand aria-pressed="false">Expand cards</button></div>
+<div class="panel scoreboard" data-score-content>
+<div class="panel-bar"><h3>Overall ranking</h3><span data-player-count>{{ cards|length }} player{{ '' if cards|length == 1 else 's' }}</span></div>
+<div class="score-column-head" aria-hidden="true"><span>RANK / PLAYER</span><span>BEST CARD POINTS</span></div>
+<div class="ranking-list">
+{% for card in cards %}
+<article class="ranking-entry" data-player="{{ card.player_name }}" data-card-key="{{ card.player_name }}">
+<div class="ranking-row"><span class="rank {% if loop.index == 1 %}rank-first{% endif %}" aria-label="Rank {{ loop.index }}">{{ loop.index }}</span><div class="player-info"><a href="{{ url_for('render_player', tournament_id=tournament_id, player_name=card.player_name) }}">{{ card.player_name }}</a><span>{{ card.games|length }} game{{ '' if card.games|length == 1 else 's' }}{% if loop.index == 1 %}<span class="leader-label">LEADER</span>{% endif %}</span></div><div class="score-info"><strong>{{ card.computed_score()|commafy }}</strong><a href="{{ url_for('render_player', tournament_id=tournament_id, player_name=card.player_name) }}">Player cards <span aria-hidden="true">↗</span></a></div></div>
+<details class="card-details"><summary><span class="machine-chips">{% for game in card.games %}<span class="machine-chip era-{{ game.era }}">{{ game.game_name }}</span>{% endfor %}</span><span class="breakdown-label">Breakdown <span class="chevron" aria-hidden="true">⌄</span></span></summary>{{ breakdown(card) }}</details>
+</article>
+{% else %}<div class="empty-state"><h3>The board is waiting.</h3><p>No valid cards have been recorded yet. Check back after the first scores come in.</p></div>{% endfor %}
+</div>
+<div class="empty-state" data-search-empty hidden><h3>No matching players</h3><p>Try another name, or clear your search to see everyone.</p></div>
+<div class="scoreboard-footer"><span>Highest valid card per player</span><span>{{ cards|length }} ranked</span></div>
+</div>
+<p class="update-status" data-refresh-status role="status" data-updated-at="{{ updated_at }}" {% if static_snapshot %}data-static-snapshot="true"{% endif %}>{% if static_snapshot %}Score snapshot: {{ updated_at }}. Scheduled publication every 5 minutes; updates may be delayed.{% else %}Scores fetched with this page. Refreshes every 60 seconds when auto is on.{% endif %}</p>
+</section>
+<aside class="sidebar" aria-label="Tournament reference"><section class="panel quick-guide"><div class="panel-bar"><h2>At a glance</h2><span aria-hidden="true">i</span></div><dl><div><dt>Scoring</dt><dd>Best valid card</dd></div><div><dt>Game points</dt><dd>Score × multiplier</dd></div><div><dt>Card points</dt><dd>Sum of game points</dd></div><div><dt>Era limit</dt><dd>{{ max_per_era }} games per era</dd></div></dl><a class="panel-link" href="{{ url_for('render_machines', tournament_id=tournament_id) }}">Machine multipliers <span aria-hidden="true">→</span></a></section><section class="era-key"><h3>Know your eras</h3><p><span class="era era-old">OLD</span> Alphanumeric</p><p><span class="era era-mid">MID</span> Dot matrix / DMD</p><p><span class="era era-new">NEW</span> Full LCD</p><small>Era labels appear on each game.</small></section></aside>
+</div>
+{% include "rules.html" %}
+{% endblock %}

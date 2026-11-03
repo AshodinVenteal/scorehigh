@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "card.html" import breakdown %}
+{% block title %}{{ player_name }} · {{ title }} · ScoreHigh{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('render_ranking', tournament_id=tournament_id) }}">← Back to standings</a>
+<div class="section-heading"><div><p class="eyebrow">PLAYER CARDS</p><h2>{{ player_name }}</h2></div><div class="refresh-controls" data-refresh-controls hidden><button class="text-button" type="button" data-refresh>↻ Refresh</button><button class="text-button" type="button" data-auto aria-pressed="true">Auto: on</button></div></div>
+<div data-score-content>
+<div class="player-stats panel"><div><span>Tournament rank</span><strong>{{ '#' ~ rank if rank else 'Unranked' }}</strong></div><div><span>Best valid card</span><strong>{{ best_card.computed_score()|commafy if best_card else '—' }}</strong></div><div><span>Cards recorded</span><strong>{{ cards|length }}</strong></div></div>
+<div class="section-heading history-heading"><h3>Card history</h3><span class="muted">Highest total first</span></div>
+{% for card in cards %}
+<article class="panel history-card {% if not card.is_valid() %}invalid-card{% endif %}" data-card-key="{{ card|card_key }}"><div class="history-card-heading"><div><h3>Card {{ loop.index }}</h3><span class="card-label">{% if not card.is_valid() %}Excluded from standings{% elif card == best_card %}Best valid card{% else %}Valid card{% endif %} · {{ card.games|length }} games</span></div><strong class="history-total">{{ card.computed_score()|commafy }}</strong></div>
+{% if not card.is_valid() %}<p class="invalid-notice"><strong>Invalid card — ask a tournament director.</strong> More than {{ max_per_era }} games from one era. This total does not count toward your rank.</p>{% endif %}
+<details class="card-details" {% if card == best_card or not card.is_valid() %}open{% endif %}><summary><span>Machine scores &amp; multipliers</span><span class="chevron" aria-hidden="true">⌄</span></summary>{{ breakdown(card) }}</details></article>
+{% endfor %}
+</div>
+<p class="update-status" data-refresh-status role="status" data-updated-at="{{ updated_at }}" {% if static_snapshot %}data-static-snapshot="true"{% endif %}>{% if static_snapshot %}Score snapshot: {{ updated_at }}. Scheduled publication every 5 minutes; updates may be delayed.{% else %}Scores fetched with this page. Refreshes every 60 seconds when auto is on.{% endif %}</p>
+{% include "rules.html" %}
+{% endblock %}
