@@ -6,6 +6,17 @@
   const saveSetting = (key, value) => { try { localStorage.setItem(key, value); } catch {} };
   const themeSelect = one('[data-theme-select]');
   const styleSelect = one('[data-style-select]');
+  const scoreFontSelect = one('[data-score-font-select]');
+  const setScoreFont = value => {
+    const selected = value === 'plain' ? 'plain' : 'segmented';
+    document.documentElement.dataset.scoreFont = selected;
+    scoreFontSelect.value = selected;
+  };
+  setScoreFont(readSetting('scorehigh-score-font'));
+  scoreFontSelect.addEventListener('change', () => {
+    setScoreFont(scoreFontSelect.value);
+    saveSetting('scorehigh-score-font', scoreFontSelect.value);
+  });
   const setStyle = style => {
     const selected = style === 'portal' ? 'portal' : 'windows';
     document.documentElement.dataset.style = selected;
@@ -52,19 +63,88 @@
 
   const search = one('[data-player-search]');
   const clear = one('[data-clear-search]');
+  let followingOnly = false;
+  let tracking = {};
+  try {
+    const saved = JSON.parse(readSetting('scorehigh-players') || '{}');
+    if (saved && typeof saved === 'object' && !Array.isArray(saved)) tracking = saved;
+  } catch {}
+  const playerState = id => {
+    const state = Object.hasOwn(tracking, id) ? tracking[id] : null;
+    return {
+      claimed: typeof state?.claimed === 'string' ? state.claimed : '',
+      followed: Array.isArray(state?.followed) ? state.followed.filter(name => typeof name === 'string') : [],
+    };
+  };
+  const applyTracking = () => {
+    all('[data-tracked-player]').forEach(entry => {
+      const name = entry.dataset.trackedPlayer;
+      const state = playerState(entry.dataset.tournament);
+      const mine = state.claimed === name;
+      const followed = state.followed.includes(name);
+      entry.classList.toggle('is-me', mine);
+      entry.classList.toggle('is-followed', followed);
+      one('[data-player-controls]', entry).hidden = false;
+      const badge = one('[data-tracking-badge]', entry);
+      badge.textContent = mine ? 'YOU' : 'FOLLOWING';
+      badge.hidden = !mine && !followed;
+      const claim = one('[data-claim-player]', entry);
+      claim.textContent = mine ? 'Unclaim player' : 'Claim player';
+      claim.setAttribute('aria-pressed', String(mine));
+      claim.setAttribute('aria-label', `${mine ? 'Unclaim' : 'Claim'} ${name} as yourself`);
+      const follow = one('[data-follow-player]', entry);
+      follow.textContent = followed ? 'Unfollow' : 'Follow';
+      follow.setAttribute('aria-pressed', String(followed));
+      follow.setAttribute('aria-label', `${followed ? 'Unfollow' : 'Follow'} ${name}`);
+    });
+    const first = one('[data-tracked-player]');
+    const claimStatus = one('[data-claim-status]');
+    if (claimStatus && first) {
+      const state = playerState(first.dataset.tournament);
+      claimStatus.textContent = state.claimed ? `You: ${state.claimed}` : 'No player claimed.';
+    }
+  };
   const filterPlayers = () => {
     if (!search) return;
     const query = search.value.trim().toLocaleLowerCase();
     const entries = all('[data-player]');
     let visible = 0;
     entries.forEach(entry => {
-      entry.hidden = !entry.dataset.player.toLocaleLowerCase().includes(query);
+      const state = playerState(entry.dataset.tournament);
+      const tracked = state.claimed === entry.dataset.player || state.followed.includes(entry.dataset.player);
+      entry.hidden = !entry.dataset.player.toLocaleLowerCase().includes(query) || (followingOnly && !tracked);
       if (!entry.hidden) visible++;
     });
-    one('[data-search-empty]').hidden = !query || visible > 0;
-    one('[data-player-count]').textContent = query ? `${visible} of ${entries.length} players` : `${entries.length} player${entries.length === 1 ? '' : 's'}`;
+    one('[data-search-empty]').hidden = (!query && !followingOnly) || visible > 0;
+    one('[data-player-count]').textContent = query || followingOnly ? `${visible} of ${entries.length} players` : `${entries.length} player${entries.length === 1 ? '' : 's'}`;
     clear.hidden = !query;
   };
+  applyTracking();
+  all('[data-tracking-note], [data-tracking-toolbar]').forEach(node => { node.hidden = false; });
+  const followingFilter = one('[data-following-filter]');
+  followingFilter?.addEventListener('click', () => {
+    followingOnly = !followingOnly;
+    followingFilter.setAttribute('aria-pressed', String(followingOnly));
+    followingFilter.textContent = followingOnly ? 'Show everyone' : 'Following only';
+    filterPlayers();
+  });
+  document.addEventListener('click', event => {
+    const button = event.target.closest('[data-claim-player], [data-follow-player]');
+    if (!button) return;
+    const entry = button.closest('[data-tracked-player]');
+    const id = entry.dataset.tournament;
+    const name = entry.dataset.trackedPlayer;
+    const state = playerState(id);
+    if (button.hasAttribute('data-claim-player')) {
+      state.claimed = state.claimed === name ? '' : name;
+    } else {
+      state.followed = state.followed.includes(name) ? state.followed.filter(player => player !== name) : [...state.followed, name];
+    }
+    tracking[id] = state;
+    saveSetting('scorehigh-players', JSON.stringify(tracking));
+    applyTracking();
+    filterPlayers();
+  });
   if (search) {
     one('[data-search-toolbar]').hidden = false;
     search.addEventListener('input', filterPlayers);
@@ -94,10 +174,9 @@
     const time = lastUpdated.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     if (staticSnapshot) {
       const date = lastUpdated.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-      const stale = Date.now() - lastUpdated.getTime() > 15 * 60000;
-      status.textContent = `Scores snapshot: ${date}, ${time} · ${auto ? 'Checks for published updates every 60 sec' : 'Update checks paused'}. Publication scheduled every 5 min; delays are possible.${stale ? ' This snapshot is more than 15 minutes old.' : ''}`;
+      status.textContent = `Snapshot: ${date}, ${time} · ${auto ? 'checks every 60s.' : 'checks paused.'}`;
     } else {
-      status.textContent = `Fetched ${time} · ${auto ? 'Auto-refresh every 60 sec' : 'Auto-refresh paused'}. Match Play scores may be cached for up to 60 sec.`;
+      status.textContent = `Snapshot: ${time} · ${auto ? 'checks every 60s.' : 'checks paused.'}`;
     }
   };
   const refresh = async (manual = false) => {
@@ -122,6 +201,7 @@
       });
       const scrollY = window.scrollY;
       current.replaceWith(incoming);
+      applyTracking();
       filterPlayers();
       window.scrollTo({ top: scrollY, behavior: 'instant' });
       lastUpdated = new Date(timestamp.dataset.updatedAt);

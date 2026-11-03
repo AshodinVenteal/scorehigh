@@ -4,6 +4,8 @@
 {% block content %}
 <a class="back-link" href="{{ url_for('render_ranking', tournament_id=tournament_id) }}">← Back to standings</a>
 <div class="section-heading"><div><p class="eyebrow">PLAYER CARDS</p><h2>{{ player_name }}</h2></div><div class="refresh-controls" data-refresh-controls hidden><button class="text-button" type="button" data-refresh>↻ Refresh</button><button class="text-button" type="button" data-auto aria-pressed="true">Auto: on</button></div></div>
+<div class="player-tracking" data-tracked-player="{{ player_name }}" data-tournament="{{ tournament_id }}">{% include "player_controls.html" %}</div>
+<p class="tracking-note" data-tracking-note hidden>Saved on this device for this tournament. Claiming a player doesn't verify account ownership.</p>
 <div data-score-content>
 <div class="player-stats panel"><div><span>Tournament rank</span><strong>{{ '#' ~ rank if rank else 'Unranked' }}</strong></div><div><span>Best valid card</span><strong>{{ best_card.computed_score()|commafy if best_card else '—' }}</strong></div><div><span>Cards recorded</span><strong>{{ cards|length }}</strong></div></div>
 <div class="section-heading history-heading"><h3>Card history</h3><span class="muted">Highest total first</span></div>
@@ -13,6 +15,6 @@
 <details class="card-details" {% if card == best_card or not card.is_valid() %}open{% endif %}><summary><span>Machine scores &amp; multipliers</span><span class="chevron" aria-hidden="true">⌄</span></summary>{{ breakdown(card) }}</details></article>
 {% endfor %}
 </div>
-<p class="update-status" data-refresh-status role="status" data-updated-at="{{ updated_at }}" {% if static_snapshot %}data-static-snapshot="true"{% endif %}>{% if static_snapshot %}Score snapshot: {{ updated_at }}. Scheduled publication every 5 minutes; updates may be delayed.{% else %}Scores fetched with this page. Refreshes every 60 seconds when auto is on.{% endif %}</p>
+<p class="update-status" data-refresh-status role="status" data-updated-at="{{ updated_at }}" {% if static_snapshot %}data-static-snapshot="true"{% endif %}>Snapshot: {{ updated_at }} · checks every 60s.</p>
 {% include "rules.html" %}
 {% endblock %}

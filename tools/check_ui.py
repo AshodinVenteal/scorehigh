@@ -47,6 +47,30 @@ def main():
         assert entries.count() > 0
         name = entries.first.get_attribute('data-player')
         score = page.locator('.score-info > strong').first.inner_text()
+        page.evaluate("localStorage.removeItem('scorehigh-players')")
+        page.reload(wait_until='networkidle')
+        page.locator('[data-claim-player]').first.click()
+        assert page.locator('.ranking-entry.is-me').count() == 1
+        page.locator('[data-follow-player]').nth(1).click()
+        assert page.locator('.ranking-entry.is-followed').count() == 1
+        page.locator('[data-following-filter]').click()
+        assert page.locator('[data-player]:visible').count() == 2
+        page.locator('[data-following-filter]').click()
+        page.reload(wait_until='networkidle')
+        assert page.locator('.ranking-entry.is-me').count() == 1
+        assert page.locator('.ranking-entry.is-followed').count() == 1
+        page.locator('[data-claim-player]').nth(2).click()
+        assert page.locator('.ranking-entry.is-me').count() == 1
+        assert page.locator('.ranking-entry.is-me').get_attribute('data-player') == entries.nth(2).get_attribute('data-player')
+        page.locator('[data-claim-player]').first.click()
+        assert page.locator('.ranking-entry.is-me').get_attribute('data-player') == name
+        assert 'Snapshot:' in page.locator('[data-refresh-status]').inner_text()
+        assert 'checks every 60s.' in page.locator('[data-refresh-status]').inner_text()
+        choose_appearance(page, '[data-score-font-select]', 'plain')
+        assert page.locator('html').get_attribute('data-score-font') == 'plain'
+        choose_appearance(page, '[data-score-font-select]', 'segmented')
+        page.evaluate('document.fonts.ready')
+        assert page.evaluate("document.fonts.check('700 22px \"ScoreHigh Digits\"', '0123456789')")
         for width in [320, 375, 390, 768, 1280]:
             page.set_viewport_size({"width": width, "height": 900 if width > 600 else 844})
             check_width(page)
@@ -70,6 +94,8 @@ def main():
         assert search.input_value() == name
         assert page.locator('.card-details').first.get_attribute('open') is not None
         assert page.locator('.score-info > strong').first.inner_text() == score
+        assert page.locator('.ranking-entry.is-me').count() == 1
+        assert page.locator('.ranking-entry.is-followed').count() == 1
         ranking_url = re.compile(r'/ranking/281672/?(?:\?.*)?$')
         page.route(ranking_url, lambda route: route.fulfill(status=503, body='Unavailable'))
         page.locator('[data-refresh]').click()
@@ -94,6 +120,10 @@ def main():
         page.locator('[data-player]:visible').first.locator('.player-info > a').click()
         page.wait_for_load_state('networkidle')
         assert page.locator('.player-stats').is_visible()
+        assert page.locator('.player-tracking.is-me').is_visible()
+        page.locator('[data-claim-player]').click()
+        assert not page.locator('.player-tracking.is-me').count()
+        page.locator('[data-claim-player]').click()
         for width in [320, 390, 1280]:
             page.set_viewport_size({"width": width, "height": 844})
             check_width(page)
@@ -136,11 +166,16 @@ def main():
         assert page.locator('[data-player-search]').input_value() == name
         assert page.locator('.card-details[open]').count() > 0
         assert not page.locator('.portal-directory').is_visible()
-        assert page.locator('.tournament-heading .matchplay-button').is_visible()
+        assert page.locator('.tabs .matchplay-tab').is_visible()
         page.goto(f'{BASE}/', wait_until='networkidle')
         icons = page.locator('.tournament-icon').all_text_contents()
         assert icons and all(icon.strip() != '#' for icon in icons)
         assert page.locator('.tournament-item .matchplay-button').first.is_visible()
+        listing = page.locator('.tournament-item').first
+        title_box = listing.locator('.tournament-link').bounding_box()
+        link_box = listing.locator('.matchplay-button').bounding_box()
+        assert link_box['x'] >= title_box['x'] + title_box['width']
+        page.screenshot(path=str(OUTPUT / 'desk-mobile.png'), full_page=True)
         page.reload(wait_until='networkidle')
         assert page.locator('.tournament-icon').all_text_contents() == icons
         check_width(page)

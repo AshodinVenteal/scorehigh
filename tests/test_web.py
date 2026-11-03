@@ -115,8 +115,8 @@ def test_tournament_icons_are_distinct_and_repeatable(client, monkeypatch):
 
 def test_matchplay_link_available_on_desk_and_inside_tournament(client):
     target = web.TOURNAMENT_MATCHPLAY_URLS[281672]
-    for path in ['/', '/how-it-works/281672']:
+    for path, link_class in [('/', 'matchplay-button'), ('/how-it-works/281672', 'matchplay-tab')]:
         html = client.get(path).get_data(as_text=True)
-        assert f'class="matchplay-button" href="{target}"' in html
-        assert 'Open in Match Play' in html
+        assert f'class="{link_class}" href="{target}"' in html
+        assert 'Match Play' in html
         assert 'rel="noopener noreferrer"' in html

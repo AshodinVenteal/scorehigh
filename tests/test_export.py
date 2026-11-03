@@ -26,6 +26,9 @@ def test_static_export_preserves_scores_links_and_history(tmp_path):
     assert (tmp_path / 'player/281672/Test Player/index.html').is_file()
     assert (tmp_path / '404.html').is_file()
     assert (tmp_path / 'static/windows.css').is_file()
+    assert (tmp_path / 'static/fonts/DSEG14Classic-Bold.woff2').is_file()
+    assert (tmp_path / 'static/fonts/DSEG-LICENSE.txt').is_file()
+    assert (tmp_path / 'static/images/score-high-for-trans-lives.jpg').is_file()
     how = (tmp_path / 'how-it-works/281672/index.html').read_text(encoding='utf-8')
     assert '531,800,000' in how
     assert '/scorehigh/how-it-works/281672' in ranking

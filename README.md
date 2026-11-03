@@ -15,7 +15,7 @@ Open http://127.0.0.1:8765/ranking/281672 for the test tournament.
 Pages fetch real scores from the public Match Play API; no API key is required.
 Tournament names and IDs are configured in `src/matchplay_score/web.py`.
 `TOURNAMENT_MATCHPLAY_URLS` holds placeholder event links for the prominent
-Match Play buttons on the tournament desk and in tournament headers. Replace
+Match Play buttons on the tournament desk and external tabs within tournaments. Replace
 these with URLs from tournament records when database integration is added.
 
 ## Frontend
@@ -36,6 +36,16 @@ ScoreHigh is a working display name.
 - Tournament icons are selected from event-themed emoji using the tournament
   ID as a random seed. They remain consistent across visits and exports;
   listed tournaments avoid duplicate icons while the emoji pool allows it.
+- Claim player marks one player as you per tournament; Follow highlights any
+  other players. Following only filters the standings without renumbering.
+  These are local browser preferences keyed by tournament and display name,
+  not verified account claims or shared records. Rename changes require
+  claiming/following again. Preferences persist across score refreshes.
+- The supplied Score High 4 Trans Lives artwork appears on the tournament
+  desk. Header lettering and score totals use self-hosted DSEG14 Classic
+  fonts by keshikan, distributed under the included SIL Open Font License.
+  Smaller raw scores retain plain type. Display → Score digits switches
+  between alphanumeric displays and plain numbers, saved on the device.
 - Auto-refresh runs every 60 seconds while the page is visible. It preserves
   the search and expanded cards, skips focused card controls, and keeps the
   previous scores visible if a request fails. The API's existing cache can add
