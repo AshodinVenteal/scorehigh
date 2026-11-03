@@ -2,10 +2,10 @@
 {% block title %}Tournaments · ScoreHigh{% endblock %}
 {% block content %}
 <section class="page-heading"><h1>Tournaments</h1></section>
-<div class="desk-layout"><section class="panel"><div class="panel-bar"><h2>Tournament list</h2><span>{{ tournaments|length }} listed</span></div>
+<section class="panel"><div class="panel-bar"><h2>Tournament list</h2><span>{{ tournaments|length }} listed</span></div>
 {% for id, name in tournaments.items() %}
 <div class="tournament-item"><a class="tournament-link" href="{{ url_for('render_ranking', tournament_id=id) }}"><span class="tournament-icon" aria-hidden="true">{{ tournament_icons[id] }}</span><span><strong>{{ name }}</strong><small>Best-card standings · Tournament {{ id }}</small></span><span class="link-arrow" aria-hidden="true">→</span></a><a class="matchplay-button" href="{{ matchplay_urls.get(id, 'https://app.matchplay.events/') }}" target="_blank" rel="noopener noreferrer" aria-label="Open {{ name }} in Match Play (opens in a new tab)">Open Match Play <span aria-hidden="true">↗</span></a></div>
 {% else %}<p class="empty-state">No tournaments have been listed yet.</p>{% endfor %}
-</section><figure class="event-art"><img src="{{ url_for('static', filename='images/score-high-for-trans-lives.jpg') }}" alt="Score High 4 Trans Lives — alphanumeric displays over the trans flag" width="1600" height="900"></figure></div>
+</section>
 {% include "rules.html" %}
 {% endblock %}

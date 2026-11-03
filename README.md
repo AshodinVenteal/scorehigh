@@ -41,16 +41,17 @@ ScoreHigh is a working display name.
   These are local browser preferences keyed by tournament and display name,
   not verified account claims or shared records. Rename changes require
   claiming/following again. Preferences persist across score refreshes.
-- The supplied Score High 4 Trans Lives artwork appears on the tournament
-  desk. Header lettering and score totals use self-hosted DSEG14 Classic
-  fonts by keshikan, distributed under the included SIL Open Font License.
-  Smaller raw scores retain plain type. Display → Score digits switches
-  between alphanumeric displays and plain numbers, saved on the device.
+- Header lettering uses self-hosted DSEG14 Classic by keshikan, distributed
+  under the included SIL Open Font License. Score totals default to plain
+  monospaced digits. Display → Score digits selects optional display fonts,
+  saved on the device. Smaller raw scores retain plain type.
   Score-only alternatives include Dot matrix (Doto), Alarm clock (DSEG7),
   LCD Mono (Share Tech Mono), Electronic highway sign (Sixtyfour), and Retro
   terminal (VT323). These are style labels; Electronic highway sign uses
   Sixtyfour's square LED-like glyphs. The logo and body fonts are unchanged.
   All fonts are self-hosted with their original OFL license notices.
+  New visitors default to large, plain monospaced sans-serif digits. Explicit
+  score-font selections remain saved; display fonts are optional.
 - Auto-refresh runs every 60 seconds while the page is visible. It preserves
   the search and expanded cards, skips focused card controls, and keeps the
   previous scores visible if a request fails. The API's existing cache can add

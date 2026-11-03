@@ -8,7 +8,7 @@
   const styleSelect = one('[data-style-select]');
   const scoreFontSelect = one('[data-score-font-select]');
   const setScoreFont = value => {
-    const selected = ['segmented', 'matrix', 'alarm', 'lcd', 'highway', 'terminal', 'plain'].includes(value) ? value : 'segmented';
+    const selected = ['segmented', 'matrix', 'alarm', 'lcd', 'highway', 'terminal', 'plain'].includes(value) ? value : 'plain';
     document.documentElement.dataset.scoreFont = selected;
     scoreFontSelect.value = selected;
   };

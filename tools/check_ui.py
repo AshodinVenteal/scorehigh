@@ -47,6 +47,7 @@ def main():
         assert entries.count() > 0
         name = entries.first.get_attribute('data-player')
         score = page.locator('.score-info > strong').first.inner_text()
+        assert page.locator('html').get_attribute('data-score-font') == 'plain'
         page.evaluate("localStorage.removeItem('scorehigh-players')")
         page.reload(wait_until='networkidle')
         page.locator('[data-claim-player]').first.click()

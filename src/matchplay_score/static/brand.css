@@ -1,8 +1,9 @@
 @font-face{font-family:'ScoreHigh Logo';src:url('fonts/DSEG14Classic-Italic.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
 /* Only digits use the display face; commas retain a normal width and shape. */
 @font-face{font-family:'ScoreHigh Digits';src:url('fonts/DSEG14Classic-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;unicode-range:U+0030-0039}
-:root{--score-font:'ScoreHigh Digits','Courier New',monospace}
-:root[data-score-font=plain]{--score-font:'Courier New',monospace}
+:root{--score-font:'Cascadia Mono','SFMono-Regular',Consolas,'Liberation Mono',monospace}
+:root[data-score-font=plain]{--score-font:'Cascadia Mono','SFMono-Regular',Consolas,'Liberation Mono',monospace}
+:root[data-score-font=segmented]{--score-font:'ScoreHigh Digits','Courier New',monospace}
 @font-face{font-family:'ScoreHigh Alarm';src:url('fonts/DSEG7Classic-Bold.woff2') format('woff2');font-weight:700;font-display:swap;unicode-range:U+0030-0039}
 @font-face{font-family:'ScoreHigh Matrix';src:url('fonts/Doto.ttf') format('truetype');font-weight:100 900;font-display:swap;unicode-range:U+0030-0039}
 @font-face{font-family:'ScoreHigh LCD';src:url('fonts/ShareTechMono.ttf') format('truetype');font-weight:700;font-display:swap;unicode-range:U+0030-0039}
@@ -26,6 +27,9 @@
 .segment-wordmark:before{content:'';position:absolute;left:0;right:0;bottom:-5px;height:3px;background:linear-gradient(90deg,#a8def0 0 20%,#f0c6d7 20% 40%,#fff 40% 60%,#f0c6d7 60% 80%,#a8def0 80%)}
 .score-info>strong,.adjusted-score,.breakdown-total>strong,.history-total,.score-formula strong,.comparison-row>strong,.player-stats>div:nth-child(2)>strong{font-family:var(--score-font);font-weight:700;font-style:normal;letter-spacing:.2px;font-variant-numeric:tabular-nums;text-shadow:none;line-height:1.6}
 .score-info>strong{font-size:22px}.adjusted-score{font-size:15px}.history-total{font-size:21px}.breakdown-total>strong{font-size:17px}.score-formula strong,.comparison-row>strong{font-size:20px}.player-stats>div:nth-child(2)>strong{font-size:24px}
+:root:not([data-score-font]) .score-info>strong,:root[data-score-font=plain] .score-info>strong{font-size:28px}
+:root[data-score-font=plain] .history-total,:root[data-score-font=plain] .comparison-row>strong{font-size:26px}
+:root[data-score-font=plain] .adjusted-score{font-size:18px}
 .desk-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
 .event-art{margin:0;background:#fff;border:1px solid var(--strong-line)}
 .event-art img{display:block;width:100%;height:auto}
