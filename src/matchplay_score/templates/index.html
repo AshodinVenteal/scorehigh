@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Tournaments · ScoreHigh{% endblock %}
 {% block content %}
-<section class="page-heading"><p class="eyebrow">THE TOURNAMENT DESK</p><h1>Play a card. Make it count.</h1><p>Pinball scores, balanced across machines. Your best valid card takes its place on the board.</p></section>
-<section class="panel"><div class="panel-bar"><h2>Tournaments</h2><span>{{ tournaments|length }} listed</span></div>
+<section class="page-heading"><h1>Tournaments</h1></section>
+<section class="panel"><div class="panel-bar"><h2>Tournament list</h2><span>{{ tournaments|length }} listed</span></div>
 {% for id, name in tournaments.items() %}
 <a class="tournament-link" href="{{ url_for('render_ranking', tournament_id=id) }}"><span class="tournament-icon" aria-hidden="true">#</span><span><strong>{{ name }}</strong><small>Best-card standings · Tournament {{ id }}</small></span><span class="link-arrow" aria-hidden="true">→</span></a>
 {% else %}<p class="empty-state">No tournaments have been listed yet.</p>{% endfor %}

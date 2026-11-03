@@ -62,7 +62,7 @@ def test_empty_standings(client):
     with patch.object(web, "best_cards", return_value=[]):
         response = client.get('/ranking/281672')
     assert response.status_code == 200
-    assert 'The board is waiting.' in response.get_data(as_text=True)
+    assert 'No valid cards recorded yet.' in response.get_data(as_text=True)
 
 
 def test_upstream_outage_is_clear_and_retryable(client):
