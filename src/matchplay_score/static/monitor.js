@@ -1,3 +1,4 @@
+// Monitor stuff here is to make it work good on the big ones and readable at-a-glance. It's not fully featured or smth
 (() => {
   'use strict';
   window.ScoreHighMonitor = {
@@ -13,21 +14,33 @@
         const entries = all('.ranking-entry');
         const pinned = Math.min(3, entries.length);
         const remainder = entries.length - pinned;
-        laterScreenRows = Math.max(1, Math.min(8, Math.floor((one('.scoreboard').clientHeight - one('.score-column-head').offsetHeight) / 80)));
+        laterScreenRows = Math.max(
+          1,
+          Math.min(
+            8,
+            Math.floor(
+              (one('.scoreboard').clientHeight - one('.score-column-head').offsetHeight) / 80,
+            ),
+          ),
+        );
         screenPages = 1 + Math.ceil(Math.max(0, remainder - screenRows) / laterScreenRows);
         screenPage = Math.min(screenPage, screenPages - 1);
         one('.monitor-podium').hidden = screenPage > 0;
         one('.scoreboard').classList.toggle('monitor-finalists', screenPage === 0);
         entries.forEach((entry, index) => {
           const position = index - pinned;
-          const page = position < screenRows ? 0 : 1 + Math.floor((position - screenRows) / laterScreenRows);
+          const page =
+            position < screenRows ? 0 : 1 + Math.floor((position - screenRows) / laterScreenRows);
           entry.classList.toggle('screen-page-hidden', index < pinned || page !== screenPage);
         });
-        one('[data-monitor-page]').textContent = `Page ${screenPage + 1} / ${screenPages} · ${entries.length} players`;
-        all('[data-monitor-prev], [data-monitor-next]').forEach(button => { button.disabled = screenPages < 2; });
+        one('[data-monitor-page]').textContent =
+          `Page ${screenPage + 1} / ${screenPages} · ${entries.length} players`;
+        all('[data-monitor-prev], [data-monitor-next]').forEach((button) => {
+          button.disabled = screenPages < 2;
+        });
         one('[data-monitor-rotate]').disabled = screenPages < 2;
       };
-      const changeScreenPage = direction => {
+      const changeScreenPage = (direction) => {
         if (screenPages < 2 || screenFading) return;
         const advance = () => {
           screenPage = (screenPage + direction + screenPages) % screenPages;
@@ -43,23 +56,27 @@
         setTimeout(() => {
           advance();
           board.classList.remove('monitor-fading');
-          setTimeout(() => { screenFading = false; }, 300);
+          setTimeout(() => {
+            screenFading = false;
+          }, 300);
         }, 300);
       };
       if (enabled && one('.scoreboard')) {
         one('[data-monitor-tools]').hidden = false;
         one('[data-monitor-prev]').addEventListener('click', () => changeScreenPage(-1));
         one('[data-monitor-next]').addEventListener('click', () => changeScreenPage(1));
-        one('[data-monitor-rotate]').addEventListener('click', event => {
+        one('[data-monitor-rotate]').addEventListener('click', (event) => {
           rotating = !rotating;
           event.currentTarget.setAttribute('aria-pressed', String(rotating));
           event.currentTarget.textContent = `Rotate: ${rotating ? 'on' : 'off'}`;
         });
-        one('[data-fullscreen]').addEventListener('click', async event => {
+        one('[data-fullscreen]').addEventListener('click', async (event) => {
           try {
             if (document.fullscreenElement) await document.exitFullscreen();
             else await document.documentElement.requestFullscreen();
-          } catch { event.currentTarget.textContent = 'Use browser fullscreen'; }
+          } catch {
+            event.currentTarget.textContent = 'Use browser fullscreen';
+          }
         });
         addEventListener('resize', layoutMonitor);
         setInterval(() => {

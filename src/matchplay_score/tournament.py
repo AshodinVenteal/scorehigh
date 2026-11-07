@@ -55,7 +55,7 @@ ARENAS = [
     # Old (alphanumeric displays)
     Arena(name="Stars", short_name="Stars", era="old", multiplier=500),
     Arena(name="Viking", short_name="Viking", era="old", multiplier=180),
-    Arena(name="Quicksilver", short_name="Quicksilver", era="old", multiplier=150),
+    Arena(name="Quicksilver", short_name="Quicksilver", era="old", multiplier=140),
     Arena(name="Eight Ball Deluxe", short_name="EBD", era="old", multiplier=75),
     Arena(name="Spooky", short_name="Spooky", era="old", multiplier=21),
     Arena(name="Taxi", short_name="Taxi", era="old", multiplier=35),
@@ -66,9 +66,9 @@ ARENAS = [
         era="mid",
         multiplier=0.8,
     ),
-    Arena(name="White Water", short_name="White Water", era="mid", multiplier=0.38),
+    Arena(name="White Water", short_name="White Water", era="mid", multiplier=0.4),
     Arena(name="Congo", short_name="Congo", era="mid", multiplier=0.13),
-    Arena(name="Theatre of Magic", short_name="Theatre", era="mid", multiplier=0.12),
+    Arena(name="Theatre of Magic", short_name="Theatre", era="mid", multiplier=0.11),
     Arena(name="Disney TRON: Legacy", short_name="TRON", era="mid", multiplier=3),
     Arena(name="Star Trek (Premium)", short_name="Star Trek", era="mid", multiplier=1),
     # New (full LCD displays)
@@ -76,7 +76,7 @@ ARENAS = [
         name="Jurassic Park (Pro)",
         short_name="Jurassic Park",
         era="new",
-        multiplier=0.35,
+        multiplier=0.33,
     ),
     Arena(
         name="Iron Maiden: Legacy of the Beast (Pro)",
@@ -90,20 +90,22 @@ ARENAS = [
         era="new",
         multiplier=0.67,
     ),
-    Arena(name="Pokémon (Premium)", short_name="Pokémon", era="new", multiplier=0.45),
-    Arena(name="Dune", short_name="Dune", era="new", multiplier=0.35),
-    Arena(name="Fallout (LE)", short_name="Fallout", era="new", multiplier=0.48),
-    # Test games
-    Arena(
-        name="Baby Pac-Man",
-        short_name="Baby Pac",
-        era="mid",
-        multiplier=1000,
-    ),
+    Arena(name="Pokémon (Premium)", short_name="Pokémon", era="new", multiplier=0.33),
+    Arena(name="Dune", short_name="Dune", era="new", multiplier=0.36),
+    Arena(name="Fallout (LE)", short_name="Fallout", era="new", multiplier=0.43),
+    # Test / alternate games
     Arena(
         name="Bram Stoker's Dracula", short_name="Dracula", era="mid", multiplier=0.5
     ),
     Arena(name="Bad Cats", short_name="Bad Cats", era="old", multiplier=30),
+    Arena(
+        name="Winchester Mystery House",
+        short_name="Winchester",
+        era="new",
+        multiplier=0.9,
+    ),
+    Arena(name="Pulp Fiction", short_name="Pulp Fiction", era="new", multiplier=60),
+    Arena(name="Game of Thrones", short_name="GoT", era="mid", multiplier=0.14),
 ]
 
 
@@ -115,12 +117,13 @@ def get_arenas_by_id(arena_data: list[dict]) -> dict[int, Arena]:
     arenas_by_name: dict[str, Arena] = {arena.name: arena for arena in ARENAS}
     arenas_by_id: dict[int, Arena] = {}
     for arena_item in arena_data:
-        arena_id = arena_item["arenaId"]
-        arena_name = arena_item["name"]
-        if arena_name in arenas_by_name:
-            arenas_by_id[arena_id] = arenas_by_name[arena_name]
-        else:
-            print(f"missing name: {arena_name}")
+        if arena_item["tournamentArena"]["status"] == "active":
+            arena_id = arena_item["arenaId"]
+            arena_name = arena_item["name"]
+            if arena_name in arenas_by_name:
+                arenas_by_id[arena_id] = arenas_by_name[arena_name]
+            else:
+                print(f"missing name: {arena_name}")
     return arenas_by_id
 
 

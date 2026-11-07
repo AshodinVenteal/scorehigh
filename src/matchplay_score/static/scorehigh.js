@@ -1,15 +1,36 @@
 (() => {
   'use strict';
+
   document.documentElement.classList.add('has-script');
+
+  // DOM helpers and saved preferences
+  // If you're gonna be rooting around here it probably should be easier to read eh?? :3
   const one = (selector, root = document) => root.querySelector(selector);
   const all = (selector, root = document) => [...root.querySelectorAll(selector)];
-  const readSetting = key => { try { return localStorage.getItem(key); } catch { return null; } };
-  const saveSetting = (key, value) => { try { localStorage.setItem(key, value); } catch {} };
+  const readSetting = (key) => {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  };
+  const saveSetting = (key, value) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch {}
+  };
+
+  // Score fonts, layouts, and color themes
   const themeSelect = one('[data-theme-select]');
   const styleSelect = one('[data-style-select]');
   const scoreFontSelect = one('[data-score-font-select]');
-  const setScoreFont = value => {
-    const selected = value === 'alarm' ? 'segmented' : (['segmented', 'matrix', 'lcd', 'highway', 'terminal', 'plain'].includes(value) ? value : 'plain');
+  const setScoreFont = (value) => {
+    const selected =
+      value === 'alarm'
+        ? 'segmented'
+        : ['segmented', 'matrix', 'lcd', 'highway', 'terminal', 'plain'].includes(value)
+          ? value
+          : 'plain';
     document.documentElement.dataset.scoreFont = selected;
     scoreFontSelect.value = selected;
   };
@@ -18,14 +39,18 @@
     setScoreFont(scoreFontSelect.value);
     saveSetting('scorehigh-score-font', scoreFontSelect.value);
   });
-  const setStyle = style => {
+  const setStyle = (style) => {
     const selected = ['portal', 'windows', 'matchplay'].includes(style) ? style : 'matchplay';
     document.documentElement.dataset.style = selected;
     one('[data-portal-stylesheet]').disabled = selected !== 'portal';
-    all('[data-matchplay-stylesheet], [data-monitor-stylesheet]').forEach(sheet => { sheet.disabled = selected !== 'matchplay'; });
+    all('[data-matchplay-stylesheet], [data-monitor-stylesheet]').forEach((sheet) => {
+      sheet.disabled = selected !== 'matchplay';
+    });
     styleSelect.value = selected;
   };
-  const monitor = document.documentElement.dataset.monitor === 'true' || new URLSearchParams(location.search).get('display') === 'monitor';
+  const monitor =
+    document.documentElement.dataset.monitor === 'true' ||
+    new URLSearchParams(location.search).get('display') === 'monitor';
   if (monitor) document.documentElement.dataset.monitor = 'true';
   setStyle(monitor ? 'matchplay' : readSetting('scorehigh-style'));
   styleSelect.addEventListener('change', () => {
@@ -36,7 +61,8 @@
   let themePreference = readSetting('scorehigh-theme') || 'system';
   if (!['system', 'light', 'dark'].includes(themePreference)) themePreference = 'system';
   const setTheme = () => {
-    const theme = themePreference === 'system' ? (systemTheme.matches ? 'dark' : 'light') : themePreference;
+    const theme =
+      themePreference === 'system' ? (systemTheme.matches ? 'dark' : 'light') : themePreference;
     document.documentElement.dataset.theme = theme;
     themeSelect.value = themePreference;
     one('meta[name="theme-color"]').content = theme === 'dark' ? '#182223' : '#173c42';
@@ -50,23 +76,33 @@
   });
   systemTheme.addEventListener('change', setTheme);
   const displaySettings = one('.display-settings');
-  document.addEventListener('click', event => {
+  document.addEventListener('click', (event) => {
     if (!displaySettings.contains(event.target)) displaySettings.open = false;
   });
-  document.addEventListener('keydown', event => {
+  document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && displaySettings.open) {
       displaySettings.open = false;
       one('summary', displaySettings).focus();
     }
   });
 
-  const openFormat = () => { if (location.hash === '#format' && one('#format')) one('#format').open = true; };
+  // Open scoring rules when linked directly to the format section
+  const openFormat = () => {
+    if (location.hash === '#format' && one('#format')) one('#format').open = true;
+  };
   addEventListener('hashchange', openFormat);
-  all('a[href="#format"]').forEach(link => link.addEventListener('click', () => { one('#format').open = true; }));
+  all('a[href="#format"]').forEach((link) =>
+    link.addEventListener('click', () => {
+      one('#format').open = true;
+    }),
+  );
   openFormat();
 
+  // Keep commas readable when a display font uses a custom separator
   const formatScoreSeparators = () => {
-    all('.score-info > strong, .podium-total, .adjusted-score, .breakdown-total > strong, .history-total, .score-formula strong, .comparison-row > strong, .player-stats > div:nth-child(2) > strong, .score-font-preview > strong').forEach(score => {
+    all(
+      '.score-info > strong, .podium-total, .adjusted-score, .breakdown-total > strong, .history-total, .score-formula strong, .comparison-row > strong, .player-stats > div:nth-child(2) > strong, .score-font-preview > strong',
+    ).forEach((score) => {
       if (score.querySelector('.score-comma') || !score.textContent.includes(',')) return;
       const parts = score.textContent.split(',');
       score.setAttribute('aria-label', score.textContent);
@@ -87,56 +123,96 @@
   };
   formatScoreSeparators();
 
-  const ticker = one('[data-ticker]');
-  if (ticker) {
-    let paused = false;
-    let checking = false;
-    const motion = matchMedia('(prefers-reduced-motion: reduce)');
-    const prepareTicker = () => {
-      const track = one('[data-ticker-track]', ticker);
-      const group = one('.ticker-group', track);
-      all('[data-ticker-copy]', track).forEach(node => node.remove());
-      track.classList.remove('is-running');
-      if (!motion.matches && group.querySelector('a')) {
-        const copy = group.cloneNode(true);
-        copy.setAttribute('aria-hidden', 'true');
-        copy.setAttribute('inert', '');
-        copy.dataset.tickerCopy = 'true';
-        track.append(copy);
-        track.style.setProperty('--ticker-duration', `${Math.max(30, group.scrollWidth / 35)}s`);
-        track.classList.add('is-running');
-      }
-    };
+  // The homepage ticker is opt-in. It reads our cached scores, never Match Play.
+  const tickerToggle = one('[data-ticker-toggle]');
+  const tickerHost = one('[data-ticker-host]');
+  let tickerEnabled = readSetting('scorehigh-ticker') === 'on';
+  let tickerChecking = false;
+  let tickerPaused = false;
+  let tickerRequest;
+  const tickerMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+  const prepareTicker = () => {
+    if (!tickerHost) return;
+    const ticker = one('[data-ticker]', tickerHost);
+    if (!ticker) return;
+    const track = one('[data-ticker-track]', ticker);
+    const group = one('.ticker-group', track);
+    all('[data-ticker-copy]', track).forEach((node) => node.remove());
+    track.classList.remove('is-running');
+    ticker.classList.toggle('is-paused', tickerPaused);
     const pause = one('[data-ticker-pause]', ticker);
-    pause.hidden = false;
-    pause.addEventListener('click', () => {
-      paused = !paused;
-      ticker.classList.toggle('is-paused', paused);
-      pause.setAttribute('aria-pressed', String(paused));
-      pause.textContent = paused ? 'Resume' : 'Pause';
+    pause.setAttribute('aria-pressed', String(tickerPaused));
+    pause.textContent = tickerPaused ? 'Resume' : 'Pause';
+    if (!tickerMotion.matches && group.querySelector('a')) {
+      const copy = group.cloneNode(true);
+      copy.setAttribute('aria-hidden', 'true');
+      copy.setAttribute('inert', '');
+      copy.dataset.tickerCopy = 'true';
+      track.append(copy);
+      track.style.setProperty('--ticker-duration', `${Math.max(30, group.scrollWidth / 35)}s`);
+      track.classList.add('is-running');
+    }
+  };
+
+  const refreshTicker = async () => {
+    if (
+      !tickerHost ||
+      !tickerEnabled ||
+      tickerChecking ||
+      document.hidden ||
+      tickerHost.contains(document.activeElement)
+    )
+      return;
+    tickerChecking = true;
+    tickerRequest = new AbortController();
+    const timeout = setTimeout(() => tickerRequest.abort(), 20000);
+    try {
+      const response = await fetch(tickerHost.dataset.tickerUrl, { signal: tickerRequest.signal });
+      if (!response.ok) throw new Error('Ticker unavailable');
+      const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+      const incoming = one('[data-ticker]', doc);
+      if (!incoming) throw new Error('Incomplete ticker');
+      // Disabling the ticker also prevents an in-flight response from showing it.
+      if (tickerEnabled) {
+        tickerHost.replaceChildren(incoming);
+        prepareTicker();
+      }
+    } catch {
+      if (tickerEnabled && !one('[data-ticker]', tickerHost)) {
+        tickerHost.textContent = 'Standings temporarily unavailable.';
+      }
+    } finally {
+      clearTimeout(timeout);
+      tickerChecking = false;
+    }
+  };
+
+  if (tickerToggle) {
+    tickerToggle.checked = tickerEnabled;
+    tickerToggle.addEventListener('change', () => {
+      tickerEnabled = tickerToggle.checked;
+      saveSetting('scorehigh-ticker', tickerEnabled ? 'on' : 'off');
+      if (tickerHost) tickerHost.hidden = !tickerEnabled;
+      if (tickerEnabled) refreshTicker();
+      else tickerRequest?.abort();
     });
-    motion.addEventListener('change', prepareTicker);
-    prepareTicker();
-    setInterval(async () => {
-      if (checking || document.hidden || ticker.contains(document.activeElement)) return;
-      checking = true;
-      try {
-        const response = await fetch(location.href, { cache: 'no-store', signal: AbortSignal.timeout(20000) });
-        if (!response.ok) return;
-        const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
-        const incoming = one('[data-ticker]', doc);
-        if (incoming && incoming.dataset.updatedAt !== ticker.dataset.updatedAt) {
-          one('[data-ticker-track]', ticker).replaceWith(one('[data-ticker-track]', incoming));
-          ticker.dataset.updatedAt = incoming.dataset.updatedAt;
-          prepareTicker();
-        }
-      } catch { /* Keep the last published standings on a failed update. */ }
-      finally { checking = false; }
-    }, 60000);
+  }
+  if (tickerHost) {
+    tickerHost.hidden = !tickerEnabled;
+    tickerHost.addEventListener('click', (event) => {
+      if (!event.target.closest('[data-ticker-pause]')) return;
+      tickerPaused = !tickerPaused;
+      prepareTicker();
+    });
+    tickerMotion.addEventListener('change', prepareTicker);
+    if (tickerEnabled) refreshTicker();
+    setInterval(refreshTicker, 60000);
   }
 
   const monitorDisplay = window.ScoreHighMonitor.create({ enabled: monitor, one, all });
 
+  // Player search, claiming, and following (aka tracking)
   const search = one('[data-player-search]');
   const clear = one('[data-clear-search]');
   let followingOnly = false;
@@ -145,15 +221,17 @@
     const saved = JSON.parse(readSetting('scorehigh-players') || '{}');
     if (saved && typeof saved === 'object' && !Array.isArray(saved)) tracking = saved;
   } catch {}
-  const playerState = id => {
+  const playerState = (id) => {
     const state = Object.hasOwn(tracking, id) ? tracking[id] : null;
     return {
       claimed: typeof state?.claimed === 'string' ? state.claimed : '',
-      followed: Array.isArray(state?.followed) ? state.followed.filter(name => typeof name === 'string') : [],
+      followed: Array.isArray(state?.followed)
+        ? state.followed.filter((name) => typeof name === 'string')
+        : [],
     };
   };
   const applyTracking = () => {
-    all('[data-tracked-player]').forEach(entry => {
+    all('[data-tracked-player]').forEach((entry) => {
       const name = entry.dataset.trackedPlayer;
       const state = playerState(entry.dataset.tournament);
       const mine = state.claimed === name;
@@ -186,18 +264,25 @@
     const query = search.value.trim().toLocaleLowerCase();
     const entries = all('[data-player]');
     let visible = 0;
-    entries.forEach(entry => {
+    entries.forEach((entry) => {
       const state = playerState(entry.dataset.tournament);
-      const tracked = state.claimed === entry.dataset.player || state.followed.includes(entry.dataset.player);
-      entry.hidden = !entry.dataset.player.toLocaleLowerCase().includes(query) || (followingOnly && !tracked);
+      const tracked =
+        state.claimed === entry.dataset.player || state.followed.includes(entry.dataset.player);
+      entry.hidden =
+        !entry.dataset.player.toLocaleLowerCase().includes(query) || (followingOnly && !tracked);
       if (!entry.hidden) visible++;
     });
     one('[data-search-empty]').hidden = (!query && !followingOnly) || visible > 0;
-    one('[data-player-count]').textContent = query || followingOnly ? `${visible} of ${entries.length} players` : `${entries.length} player${entries.length === 1 ? '' : 's'}`;
+    one('[data-player-count]').textContent =
+      query || followingOnly
+        ? `${visible} of ${entries.length} players`
+        : `${entries.length} player${entries.length === 1 ? '' : 's'}`;
     clear.hidden = !query;
   };
   applyTracking();
-  all('[data-tracking-note], [data-tracking-toolbar]').forEach(node => { node.hidden = false; });
+  all('[data-tracking-note], [data-tracking-toolbar]').forEach((node) => {
+    node.hidden = false;
+  });
   const followingFilter = one('[data-following-filter]');
   followingFilter?.addEventListener('click', () => {
     followingOnly = !followingOnly;
@@ -205,7 +290,7 @@
     followingFilter.textContent = followingOnly ? 'Show everyone' : 'Following only';
     filterPlayers();
   });
-  document.addEventListener('click', event => {
+  document.addEventListener('click', (event) => {
     const button = event.target.closest('[data-claim-player], [data-follow-player]');
     if (!button) return;
     const entry = button.closest('[data-tracked-player]');
@@ -216,40 +301,54 @@
       if (state.claimed && state.claimed !== name) return;
       state.claimed = state.claimed === name ? '' : name;
     } else {
-      state.followed = state.followed.includes(name) ? state.followed.filter(player => player !== name) : [...state.followed, name];
+      state.followed = state.followed.includes(name)
+        ? state.followed.filter((player) => player !== name)
+        : [...state.followed, name];
     }
     tracking[id] = state;
     saveSetting('scorehigh-players', JSON.stringify(tracking));
     applyTracking();
     filterPlayers();
   });
-  const syncCardToggle = details => {
+  // Keep breakdown buttons in sync with their card disclosures
+  const syncCardToggle = (details) => {
     const button = details.closest('.ranking-entry')?.querySelector('[data-card-toggle]');
     button?.setAttribute('aria-expanded', String(details.open));
   };
-  document.addEventListener('click', event => {
+  document.addEventListener('click', (event) => {
     const button = event.target.closest('[data-card-toggle]');
     if (!button) return;
     const details = button.closest('.ranking-entry').querySelector('.card-details');
     details.open = !details.open;
     syncCardToggle(details);
   });
-  document.addEventListener('toggle', event => {
-    if (event.target.matches('.ranking-entry .card-details')) syncCardToggle(event.target);
-  }, true);
+  document.addEventListener(
+    'toggle',
+    (event) => {
+      if (event.target.matches('.ranking-entry .card-details')) syncCardToggle(event.target);
+    },
+    true,
+  );
   if (search) {
     one('[data-search-toolbar]').hidden = false;
     search.addEventListener('input', filterPlayers);
-    clear.addEventListener('click', () => { search.value = ''; filterPlayers(); search.focus(); });
-    one('[data-expand]').addEventListener('click', event => {
+    clear.addEventListener('click', () => {
+      search.value = '';
+      filterPlayers();
+      search.focus();
+    });
+    one('[data-expand]').addEventListener('click', (event) => {
       const button = event.currentTarget;
       const expand = button.getAttribute('aria-pressed') !== 'true';
-      all('.ranking-entry:not([hidden]) .card-details').forEach(details => { details.open = expand; });
+      all('.ranking-entry:not([hidden]) .card-details').forEach((details) => {
+        details.open = expand;
+      });
       button.setAttribute('aria-pressed', String(expand));
       button.textContent = expand ? 'Collapse cards' : 'Expand cards';
     });
   }
 
+  // Refresh scores while preserving player selections and open cards
   const status = one('[data-refresh-status]');
   if (!status) return;
   const refreshButton = one('[data-refresh]');
@@ -265,31 +364,45 @@
     if (failed || busy) return;
     const time = lastUpdated.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     if (staticSnapshot) {
-      const date = lastUpdated.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+      const date = lastUpdated.toLocaleDateString([], {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
       status.textContent = `Snapshot: ${date}, ${time} · ${auto ? 'checks every 60s.' : 'checks paused.'}`;
     } else {
       status.textContent = `Snapshot: ${time} · ${auto ? 'checks every 60s.' : 'checks paused.'}`;
     }
+    if (status.dataset.cached === 'true') status.textContent += ' Cached scores; retrying.';
   };
   const refresh = async (manual = false) => {
     if (busy || (!manual && (!auto || document.hidden))) return;
-    // Avoid replacing a card while someone is using its links or disclosure.
+    // Avoid replacing a card while someone is using its links or disclosure
     const current = one('[data-score-content]');
     if (!manual && current.contains(document.activeElement)) return;
     busy = true;
     refreshButton.disabled = true;
     status.textContent = staticSnapshot ? 'Checking published scores…' : 'Fetching scores…';
     try {
-      const response = await fetch(location.href, { cache: 'no-store', headers: { 'X-Requested-With': 'ScoreHigh' }, signal: AbortSignal.timeout(25000) });
+      const response = await fetch(location.href, {
+        headers: { 'X-Requested-With': 'ScoreHigh' },
+        signal: AbortSignal.timeout(25000),
+      });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
       const incoming = one('[data-score-content]', doc);
       const timestamp = one('[data-refresh-status]', doc);
       if (!incoming || !timestamp) throw new Error('Incomplete scoreboard');
-      const expanded = new Map(all('[data-card-key]', current).map(entry => [entry.dataset.cardKey, one('details', entry)?.open]));
-      all('[data-card-key]', incoming).forEach(entry => {
+      const expanded = new Map(
+        all('[data-card-key]', current).map((entry) => [
+          entry.dataset.cardKey,
+          one('details', entry)?.open,
+        ]),
+      );
+      all('[data-card-key]', incoming).forEach((entry) => {
         const details = one('details', entry);
-        if (details && expanded.has(entry.dataset.cardKey)) details.open = expanded.get(entry.dataset.cardKey);
+        if (details && expanded.has(entry.dataset.cardKey))
+          details.open = expanded.get(entry.dataset.cardKey);
       });
       const scrollY = window.scrollY;
       current.replaceWith(incoming);
@@ -300,12 +413,14 @@
       monitorDisplay.layout();
       window.scrollTo({ top: scrollY, behavior: 'instant' });
       lastUpdated = new Date(timestamp.dataset.updatedAt);
+      status.dataset.cached = timestamp.dataset.cached || 'false';
       failed = false;
       delete status.dataset.error;
     } catch {
       failed = true;
       status.dataset.error = 'true';
-      status.textContent = 'Update failed. Previously fetched scores are still shown. Use Refresh to try again.';
+      status.textContent =
+        'Update failed. Previously fetched scores are still shown. Use Refresh to try again.';
     } finally {
       busy = false;
       refreshButton.disabled = false;

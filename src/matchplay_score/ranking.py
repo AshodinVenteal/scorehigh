@@ -28,10 +28,17 @@ def best_cards(tournament_id: int, use_cache: bool = True) -> list[Card]:
     return sorted(cards_by_player.values(), key=Card.computed_score, reverse=True)
 
 
-def player_cards(tournament_id: int, player_name: str) -> list[Card]:
+def player_cards(
+    tournament_id: int, player_name: str, use_cache: bool = True
+) -> list[Card]:
     """Include invalid cards in player history so their exclusion is visible."""
-    tournament = parse_tournament(get_tournament_data_cached(tournament_id))
-    if player_name not in tournament.players_by_id.values():
+    tournament_data = (
+        get_tournament_data_cached(tournament_id)
+        if use_cache
+        else get_tournament_data(tournament_id)
+    )
+    tournament = parse_tournament(tournament_data)
+    if use_cache and player_name not in tournament.players_by_id.values():
         tournament = parse_tournament(get_tournament_data(tournament_id))
     cards = [parse_card(item, tournament) for item in get_cards(tournament_id)]
     return sorted(

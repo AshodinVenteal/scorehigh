@@ -5,10 +5,10 @@ from importlib.metadata import version
 from random import Random
 
 import requests
-from flask import Flask, abort, render_template
+from flask import Flask, abort, g, render_template, request
 
 from .branding import REPOSITORY_DESCRIPTION, SITE_DESCRIPTION, SITE_TITLE
-from .matchplay_api import get_matchplay_standings, get_tournament_data_cached
+from .matchplay_api import get_tournament_data_cached, snapshot_status
 from .ranking import best_cards, player_cards
 from .tournament import (
     ARENAS,
@@ -20,12 +20,13 @@ from .tournament import (
 )
 
 app = Flask(__name__)
-APP_VERSION = version("matchplay-score")
-TOURNAMENT_INFO = {281672: "Test Tournament"}
-# Placeholder links until tournament records supply their Match Play URLs.
-TOURNAMENT_MATCHPLAY_URLS = {281672: "https://app.matchplay.events/tournaments/281672"}
+APP_VERSION = version("matchplay-score") + "-snapshots-2"
+TOURNAMENT_INFO = {
+    281672: "Test Tournament",
+    282316: "Score High for Trans Lives",
+    282630: "ScoreHigh test run",
+}
 TOURNAMENT_EMOJI = (
-    "🏆",
     "🏅",
     "🎖️",
     "🏁",
@@ -44,6 +45,12 @@ TOURNAMENT_EMOJI = (
 )
 
 
+def tournament_matchplay_urls():
+    return {
+        id: f"https://app.matchplay.events/tournaments/{id}/" for id in TOURNAMENT_INFO
+    }
+
+
 def tournament_icons():
     """Give listed tournaments repeatable random icons, avoiding duplicates."""
     icons = {}
@@ -52,6 +59,8 @@ def tournament_icons():
         icons[tournament_id] = next(
             (icon for icon in choices if icon not in icons.values()), choices[0]
         )
+    if 282316 in TOURNAMENT_INFO:
+        icons[282316] = "🏆"
     return icons
 
 
@@ -66,13 +75,33 @@ def site_context():
         "site_description": SITE_DESCRIPTION,
         "repository_description": REPOSITORY_DESCRIPTION,
         "tournament_icons": tournament_icons(),
-        "matchplay_urls": TOURNAMENT_MATCHPLAY_URLS,
+        "matchplay_urls": tournament_matchplay_urls(),
         "static_snapshot": bool(app.config.get("SNAPSHOT_AT")),
+        "cached_scores": getattr(g, "cached_scores", False),
     }
 
 
-def score_timestamp():
-    return app.config.get("SNAPSHOT_AT") or datetime.now(UTC).isoformat()
+def score_timestamp(tournament_id=None):
+    updated, stale = snapshot_status(tournament_id) if tournament_id else (None, False)
+    g.cached_scores = stale
+    return updated or app.config.get("SNAPSHOT_AT") or datetime.now(UTC).isoformat()
+
+
+@app.before_request
+def known_tournament():
+    tournament_id = (request.view_args or {}).get("tournament_id")
+    if tournament_id is not None and tournament_id not in TOURNAMENT_INFO:
+        abort(404)
+
+
+@app.after_request
+def cache_public_pages(response):
+    if request.method in {"GET", "HEAD"} and request.endpoint != "static":
+        response.headers["Cache-Control"] = "public, max-age=0, must-revalidate"
+        response.headers["Vercel-CDN-Cache-Control"] = (
+            "public, s-maxage=60, stale-while-revalidate=300"
+        )
+    return response
 
 
 def tournament_title(tournament_id):
@@ -108,7 +137,7 @@ def standings_page(tournament_id: int, *, monitor: bool = False):
         cards=cards,
         title=title,
         tournament_id=tournament_id,
-        updated_at=score_timestamp(),
+        updated_at=score_timestamp(tournament_id),
         active_tab="standings",
         monitor=monitor,
     )
@@ -136,7 +165,7 @@ def render_player(tournament_id: int, player_name: str):
         rank=rank,
         title=tournament_title(tournament_id),
         tournament_id=tournament_id,
-        updated_at=score_timestamp(),
+        updated_at=score_timestamp(tournament_id),
         active_tab="standings",
     )
 
@@ -195,47 +224,61 @@ def render_how_it_works(tournament_id: int):
 
 @app.errorhandler(requests.RequestException)
 def upstream_error(error):
-    return render_template(
-        "error.html",
-        title="Scores unavailable",
-        message="We couldn't reach Match Play. Please try again in a moment.",
-    ), 503
+    print(error)
+    return (
+        render_template(
+            "error.html",
+            title="Scores unavailable",
+            message="We couldn't reach Match Play. Please try again in a moment.",
+        ),
+        503,
+    )
 
 
 @app.errorhandler(404)
 def not_found(error):
-    return render_template(
-        "error.html",
-        title="Page not found",
-        message="This player or page couldn't be found. Choose a tournament to continue.",
-    ), 404
+    return (
+        render_template(
+            "error.html",
+            title="Page not found",
+            message="This player or page couldn't be found. Choose a tournament to continue.",
+        ),
+        404,
+    )
 
 
 @app.route("/")
 def index():
+    return render_template(
+        "index.html",
+        tournaments=TOURNAMENT_INFO,
+    )
+
+
+@app.route("/ticker/")
+def render_ticker():
     ticker = []
     unavailable = []
+    timestamps = []
     for tournament_id, title in TOURNAMENT_INFO.items():
         try:
-            standings = get_matchplay_standings(tournament_id)
-            data = get_tournament_data_cached(tournament_id)
-            players = {player["playerId"]: player["name"] for player in data["players"]}
-            for standing in standings:
+            cards = best_cards(tournament_id)
+            timestamps.append(score_timestamp(tournament_id))
+            for position, card in enumerate(cards, 1):
                 ticker.append(
                     {
                         "tournament": title,
                         "tournament_id": tournament_id,
-                        "player": players.get(standing["playerId"], "Unknown player"),
-                        "position": standing["position"],
-                        "points": standing["points"],
+                        "player": card.player_name,
+                        "position": position,
+                        "points": card.computed_score(),
                     }
                 )
         except requests.RequestException:
             unavailable.append(title)
     return render_template(
-        "index.html",
-        tournaments=TOURNAMENT_INFO,
+        "ticker.html",
         ticker=ticker,
         ticker_unavailable=unavailable,
-        updated_at=score_timestamp(),
+        updated_at=min(timestamps) if timestamps else "",
     )

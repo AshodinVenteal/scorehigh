@@ -1,8 +1,12 @@
-# ScoreHigh 4 Trans Lives PAPA-Style Scoring Page
+# ScoreHigh
 
-Code and Development for the Front End of the Scoring System for Tournaments that utilize card-based scoring
+Scoring system for the TPC ScoreHigh format, as used in [Score High for Trans Lives](https://posts.arborelia.net/trans-lives/).
 
-[Public site](https://ashodinventeal.github.io/scorehigh/) | [Preview](https://ashodinventeal.github.io/scorehigh-preview/)
+[Public site](https://score.arborelia.net) | [Preview](https://ashodinventeal.github.io/scorehigh-preview/)
+
+This frontend runs with the existing Flask application, including the hosted
+deployment at https://tpc-high-score.vercel.app. The links above are the separate
+ScoreHigh deployment and simulated preview.
 
 ScoreHigh multiplies each machine score by its configured multiplier and ranks each player by their best valid card. A card allows two games from each of three eras. Cards with fewer than six games show their progress and unused slots; cards over an era limit stay in player history but do not count toward standings.
 
@@ -23,15 +27,38 @@ Configure tournament IDs, names, and Match Play links in `src/matchplay_score/we
 
 The standings support search, expandable machine scores, and player history. Claim and follow selections are stored on the viewer's device; they do not create accounts or change tournament records.
 
-The Monitor button opens the event display. Page one shows prominent cards for ranks 1-3 an rows for ranks 4-8. Later pages show the remaining players, with capacity adjusted to the available height. Pages rotate every 12 seconds with a whole-board fade; manual paging, pause, fullscreen, and reduced motion are supported. Common supported landscape sizes are from 1024x768 through 2560x1440, including 1600x900 and 1920x1080.
+The Monitor button opens the event display. Page one shows prominent cards for ranks 1-3 and rows for ranks 4-8. Later pages show the remaining players, with capacity adjusted to the available height. Pages rotate every 12 seconds with a whole-board fade; manual paging, pause, fullscreen, and reduced motion are supported. Common supported landscape sizes are from 1024x768 through 2560x1440, including 1600x900 and 1920x1080.
 
 Display settings provide light/dark/system colors, a simple layout, Classic Windows, and a 2000s Portal layout. Hey look, I wanted options! Standings scores default to readable monospace; the event display uses 7 Segment Display font. The optional score fonts are bundled locally with their license notices.
 
 ## Score snapshots and caching
 
-A scheduled workflow reads Match Play and publishes static score snapshots about every five minutes; the browser checks published snapshots every 60 seconds. A failed build leaves the existing deployment in place.
+The separate ScoreHigh GitHub Pages deployment publishes static score snapshots
+about every five minutes; the browser checks published snapshots every 60
+seconds. This repository includes the exporter without enabling a scheduled
+Pages deployment.
 
-Server requests share a 60-second cache and one-request-per-second pacing. Rate-limit responses respect Retry-After with at least a 60-second cooldown. Visitors to the static site do not make direct Match Play API calls. The tournament ticker shows native Match Play positions and points; the standings show ScoreHigh card totals.
+Vercel reads the published JSON snapshots instead of calling Match Play. The
+included `vercel.json` sets `SCOREHIGH_SNAPSHOT_URL` to
+`https://ashodinventeal.github.io/scorehigh`. If you run your own publisher,
+change that URL to its site root. It must publish `data/tournaments/<id>.json`
+for every configured tournament. Vercel does not use local disk for this path
+and refuses direct API reads if the snapshot URL is missing. Public HTML is
+cached at Vercel's CDN for 60 seconds with 300 seconds of background revalidation.
+
+The publisher is the only Match Play reader. Its SQLite store preserves successful
+responses, request pacing, and cooldowns between runs; set `SCOREHIGH_CACHE_PATH`
+to a persistent location and restore/save it in the publisher workflow. Live cards
+are cached as complete lists for 120 seconds, rosters for 300 seconds, and requests
+are spaced at least one second apart. Failed requests back off exponentially and
+respect longer Retry-After values. Successful snapshots can be used for up to 24
+hours during outages, with their original fetch timestamps. A failed export must
+not replace the deployed site.
+
+The homepage standings ticker is off by default. Enable **Homepage standings
+ticker** in Display settings; the choice is saved on that device. It uses the same
+ScoreHigh card totals as the standings, without a separate Match Play standings
+request. Disabled tickers make no polling requests.
 
 Here's how to build the public snapshot locally:
 
